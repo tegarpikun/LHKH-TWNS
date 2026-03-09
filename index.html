@@ -1,0 +1,1588 @@
+<!doctype html>
+<html lang="id" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laporan Kerja Harian - PT. TRI-Wall Natura Surabaya</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .timer-btn { transition: all 0.2s ease; }
+    .timer-btn:active { transform: scale(0.95); }
+    .card-shadow { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+    .input-focus:focus { box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); }
+    .ng-item { animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    .toast { animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s; }
+    @keyframes slideIn { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+    .pulse-dot { animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+ </head>
+ <body class="h-full bg-slate-100 overflow-auto">
+  <div id="app" class="w-full min-h-full">
+   <!-- Toast Container -->
+   <div id="toast-container" class="fixed top-4 left-1/2 transform -translate-x-1/2 z-50"></div><!-- Confirmation Modal -->
+   <div id="confirmation-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+     <h2 class="text-lg font-bold text-slate-800 mb-4">✓ Verifikasi Data Laporan</h2>
+     <div id="confirmation-content" class="bg-slate-50 rounded-lg p-4 mb-4 max-h-96 overflow-y-auto text-sm space-y-2 text-slate-700"></div>
+     <div class="flex gap-2"><button type="button" onclick="confirmSubmit()" class="flex-1 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition flex items-center justify-center gap-2"> <span>✓</span> Simpan Laporan </button> <button type="button" onclick="cancelConfirmation()" class="flex-1 py-2.5 bg-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-400 transition">Ubah</button>
+     </div>
+    </div>
+   </div><!-- Announcement Editor Modal -->
+   <div id="announcement-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 relative">
+     <h2 class="text-lg font-bold text-slate-800 mb-4">📝 Edit Papan Informasi</h2><!-- Login Section -->
+     <div id="announcement-login-section">
+      <div class="mb-4">
+       <label class="block text-sm font-medium text-slate-700 mb-2">Password Admin</label> <input type="password" id="announcement-password" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm input-focus focus:border-blue-500" placeholder="Masukkan password" onkeypress="if(event.key==='Enter') loginAnnouncement()">
+      </div><button type="button" onclick="loginAnnouncement()" class="w-full py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition">Login</button>
+     </div><!-- Edit Section (Hidden by default) -->
+     <div id="announcement-edit-section" class="hidden">
+      <div class="mb-4">
+       <label class="block text-sm font-medium text-slate-700 mb-2">Isi Pengumuman</label> <textarea id="edit-announcement-text" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm input-focus focus:border-blue-500 resize-none" rows="5" placeholder="Ketik pengumuman di sini..." maxlength="500"></textarea>
+       <p id="char-count" class="text-xs text-slate-500 mt-1">0/500 karakter</p>
+      </div>
+      <div class="flex gap-2">
+       <button type="button" onclick="saveAnnouncementText()" class="flex-1 py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition flex items-center justify-center gap-2"> <span>💾</span> Simpan </button> <button type="button" onclick="closeAnnouncementEditor()" class="flex-1 py-2.5 bg-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-400 transition">Batal</button>
+      </div><button type="button" onclick="logoutAnnouncement()" class="w-full mt-2 py-2 text-slate-600 text-sm hover:text-slate-800 underline">Logout</button>
+     </div><!-- Close Button --> <button type="button" onclick="closeAnnouncementEditor()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-xl">✕</button>
+    </div>
+   </div>
+   <header class="bg-gradient-to-r from-blue-700 to-blue-600 text-white py-4 px-4 sticky top-0 z-40 shadow-lg">
+    <div class="max-w-2xl mx-auto">
+     <h1 id="main-title" class="text-xl font-bold text-center">📋 Laporan Hasil Kerja Harian (LHKH)</h1>
+     <p id="company-title" class="text-blue-100 text-sm text-center mt-1">PT. TRI-Wall Natura Surabaya</p>
+    </div>
+   </header><!-- Main Content -->
+   <main class="max-w-2xl mx-auto p-4 pb-24">
+    <!-- Navigation Tabs -->
+    <div class="flex gap-2 mb-4 overflow-x-auto pb-2">
+     <button onclick="showTab('form')" id="tab-form" class="tab-btn flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium bg-blue-600 text-white"> 📝 Input Laporan </button> <button onclick="showTab('archive')" id="tab-archive" class="tab-btn flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium bg-white text-slate-600"> 📸 Arsip Dokumentasi </button>
+    </div><!-- Announcement Board -->
+    <div id="announcement-board" class="bg-gradient-to-r from-amber-50 to-yellow-50 border-l-4 border-amber-400 rounded-lg p-4 mb-4 card-shadow">
+     <div class="flex items-start gap-3">
+      <span class="text-2xl">📢</span>
+      <div class="flex-1">
+       <div class="flex items-center justify-between mb-2">
+        <h3 class="font-semibold text-amber-800 text-sm">Papan Informasi</h3><button type="button" onclick="openAnnouncementEditor()" class="text-xs px-2 py-1 bg-amber-200 hover:bg-amber-300 text-amber-800 rounded transition">✏️ Edit</button>
+       </div>
+       <p id="announcement-text" class="text-amber-700 text-sm mt-1">Selamat datang di laporan LHKH TWNS! Silahkan lakukan check output terlebih dahulu, jika sudah sesuai lanjutkan untuk input kedalam sistem LHKH dengan jujur dan benar.</p>
+       <p id="announcement-time" class="text-amber-500 text-xs mt-2"></p>
+      </div>
+     </div>
+    </div><!-- Form Tab -->
+    <div id="content-form" class="tab-content">
+     <form id="report-form" class="space-y-4">
+      <!-- Section 1: Informasi Dasar -->
+      <div class="bg-white rounded-xl p-4 card-shadow">
+       <h2 class="text-base font-semibold text-slate-800 mb-4 flex items-center gap-2"><span class="w-7 h-7 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-sm">1</span> Informasi Dasar</h2>
+       <div class="grid grid-cols-2 gap-3">
+        <div>
+         <label class="block text-sm font-medium text-slate-700 mb-1">Tanggal Kerja <span class="text-red-500">*</span></label> <input type="date" id="tanggal_kerja" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm input-focus focus:border-blue-500 focus:outline-none">
+        </div>
+        <div>
+         <label class="block text-sm font-medium text-slate-700 mb-1">Jenis Jam Kerja <span class="text-red-500">*</span></label> <select id="jenis_jam_kerja" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm input-focus focus:border-blue-500 focus:outline-none bg-white"> <option value="">-- Pilih --</option> <option value="Normal">Normal</option> <option value="Lembur">Lembur</option> </select>
+        </div>
+        <div>
+         <label class="block text-sm font-medium text-slate-700 mb-1">Shift Kerja <span class="text-red-500">*</span></label> <select id="shift_kerja" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm input-focus focus:border-blue-500 focus:outline-none bg-white"> <option value="">-- Pilih --</option> <option value="Shift 1">Shift 1</option> <option value="Shift 2">Shift 2</option> <option value="Shift 3">Shift 3</option> </select>
+        </div>
+        <div>
+         <label class="block text-sm font-medium text-slate-700 mb-1">Nama Leader <span class="text-red-500">*</span></label> <select id="nama_leader" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm input-focus focus:border-blue-500 focus:outline-none bg-white"> <option value="">-- Pilih --</option> </select>
+        </div>
+        <div class="col-span-2">
+         <label class="block text-sm font-medium text-slate-700 mb-1">Work Station <span class="text-red-500">*</span></label> <select id="work_station" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm input-focus focus:border-blue-500 focus:outline-none bg-white"> <option value="">-- Pilih Work Station --</option> </select>
+        </div>
+       </div>
+      </div><!-- Section 2: Nama Operator & Helper -->
+      <div class="bg-white rounded-xl p-4 card-shadow">
+       <h2 class="text-base font-semibold text-slate-800 mb-4 flex items-center gap-2"><span class="w-7 h-7 bg-green-100 rounded-full flex items-center justify-center text-green-600 text-sm">2</span> Operator &amp; Helper</h2>
+       <div class="grid grid-cols-2 gap-3">
+        <div class="col-span-2">
+         <label class="block text-sm font-medium text-slate-700 mb-1">Nama Operator <span class="text-red-500">*</span></label> <select id="nama_operator" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm input-focus focus:border-blue-500 focus:outline-none bg-white"> <option value="">-- Pilih Operator --</option> </select>
+        </div>
+        <div>
+         <label class="block text-sm font-medium text-slate-700 mb-1">Helper 1 <span class="text-slate-400 text-xs">(Opsional)</span></label> <select id="helper_1" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm input-focus focus:border-blue-500 focus:outline-none bg-white"> <option value="">-- Tidak Ada --</option> </select>
+        </div>
+        <div>
+         <label class="block text-sm font-medium text-slate-700 mb-1">Helper 2 <span class="text-slate-400 text-xs">(Opsional)</span></label> <select id="helper_2" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm input-focus focus:border-blue-500 focus:outline-none bg-white"> <option value="">-- Tidak Ada --</option> </select>
+        </div>
+        <div>
+         <label class="block text-sm font-medium text-slate-700 mb-1">Helper 3 <span class="text-slate-400 text-xs">(Opsional)</span></label> <select id="helper_3" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm input-focus focus:border-blue-500 focus:outline-none bg-white"> <option value="">-- Tidak Ada --</option> </select>
+        </div>
+       </div>
+      </div><!-- Section 3: Hasil Output Produksi -->
+      <div class="bg-white rounded-xl p-4 card-shadow">
+       <h2 class="text-base font-semibold text-slate-800 mb-4 flex items-center gap-2"><span class="w-7 h-7 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 text-sm">3</span> Hasil Output Produksi</h2>
+       <div class="grid grid-cols-2 gap-3 mb-3">
+        <div>
+         <label class="block text-sm font-medium text-slate-700 mb-1">Kode Item (FG) <span class="text-red-500">*</span></label>
+         <div class="relative"><input type="text" id="kode_item_fg" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm input-focus focus:border-blue-500 focus:outline-none uppercase" placeholder="Cth: INT005" autocomplete="off" oninput="filterFGList()">
+          <div id="fg-dropdown" class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg max-h-48 overflow-y-auto z-50">
+           <div id="fg-list" class="py-1"></div>
+           <div id="fg-add-new" class="hidden border-t border-slate-200 p-2"><button type="button" onclick="addNewFGCode()" class="w-full px-3 py-2 text-sm text-blue-600 font-medium hover:bg-blue-50 rounded flex items-center gap-2 justify-center"> <span>➕</span> Tambah Kode Baru </button>
+           </div>
+          </div>
+         </div>
+        </div>
+        <div>
+         <label class="block text-sm font-medium text-slate-700 mb-1">Nama Komponen / Part Name <span class="text-red-500">*</span></label>
+         <div class="relative"><input type="text" id="nama_komponen" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm input-focus focus:border-blue-500 focus:outline-none" placeholder="Cth: Base Panel" autocomplete="off" oninput="filterComponentList()">
+          <div id="component-dropdown" class="hidden absolute top-full left-0 right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg max-h-48 overflow-y-auto z-50">
+           <div id="component-list" class="py-1"></div>
+          </div>
+         </div>
+        </div>
+       </div>
+       <div class="grid grid-cols-2 gap-3">
+        <div>
+         <label class="block text-sm font-medium text-slate-700 mb-1">Total Output OK / Good (Pcs) <span class="text-red-500">*</span></label> <input type="number" id="total_output_ok" min="0" required class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm input-focus focus:border-blue-500 focus:outline-none" placeholder="0" onfocus="clearZeroValue(this)">
+        </div>
+        <div>
+         <label class="block text-sm font-medium text-slate-700 mb-1">Total Output NG / Defect (Pcs)</label> <input type="number" id="total_output_ng" min="0" value="0" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm input-focus focus:border-blue-500 focus:outline-none" placeholder="0" onfocus="clearZeroValue(this)" onchange="toggleNGSection()">
+        </div>
+       </div><!-- NG Details Section -->
+       <div id="ng-section" class="hidden mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
+        <h3 class="text-sm font-semibold text-red-800 mb-3 flex items-center gap-2">⚠️ Detail Kriteria NG / Defect</h3>
+        <p class="text-xs text-red-600 mb-3">Jika Total qty masing-masing kriteria dijumlahkan hasilnya harus sama dengan Total Output NG</p>
+        <div id="ng-items-container" class="space-y-3">
+         <!-- NG items will be added here -->
+        </div><button type="button" onclick="addNGItem()" class="mt-3 w-full py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium hover:bg-red-200 transition flex items-center justify-center gap-2"> <span>➕</span> Tambah Kriteria NG </button>
+        <div id="ng-total-display" class="mt-3 p-2 bg-red-100 rounded-lg">
+         <p class="text-sm text-red-800 font-medium text-center">Total NG: <span id="ng-total-sum">0</span> / <span id="ng-target">0</span> Pcs</p>
+        </div>
+       </div>
+      </div><!-- Section 4: Pencatatan Waktu Kerja -->
+      <div class="bg-white rounded-xl p-4 card-shadow">
+       <h2 class="text-base font-semibold text-slate-800 mb-4 flex items-center gap-2"><span class="w-7 h-7 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 text-sm">4</span> Pencatatan Waktu Kerja</h2>
+       <div class="space-y-4">
+        <!-- Preparation & Setting -->
+        <div class="p-3 bg-blue-50 rounded-lg">
+         <h3 class="text-sm font-semibold text-blue-800 mb-2">🔧 Preparation &amp; Setting</h3>
+         <div class="flex items-center gap-2 mb-2">
+          <button type="button" onclick="startTimer('prep')" id="btn-prep-start" class="timer-btn flex-1 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600"> ▶️ Start </button> <button type="button" onclick="endTimer('prep')" id="btn-prep-end" class="timer-btn flex-1 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600" disabled> ⏹️ End </button>
+         </div>
+         <div class="grid grid-cols-3 gap-2 text-xs text-center">
+          <div class="bg-white p-2 rounded">
+           <p class="text-slate-500">Mulai</p>
+           <p id="prep-start-display" class="font-mono font-medium text-slate-700">--:--:--</p>
+          </div>
+          <div class="bg-white p-2 rounded">
+           <p class="text-slate-500">Selesai</p>
+           <p id="prep-end-display" class="font-mono font-medium text-slate-700">--:--:--</p>
+          </div>
+          <div class="bg-white p-2 rounded">
+           <p class="text-slate-500">Durasi</p>
+           <p id="prep-duration-display" class="font-mono font-medium text-blue-600">0 menit</p>
+          </div>
+         </div>
+        </div><!-- Waktu Proses -->
+        <div class="p-3 bg-green-50 rounded-lg">
+         <h3 class="text-sm font-semibold text-green-800 mb-2">⚙️ Waktu Proses</h3>
+         <div class="flex items-center gap-2 mb-2">
+          <button type="button" onclick="startTimer('process')" id="btn-process-start" class="timer-btn flex-1 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600"> ▶️ Start </button> <button type="button" onclick="endTimer('process')" id="btn-process-end" class="timer-btn flex-1 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600" disabled> ⏹️ End </button>
+         </div>
+         <div class="grid grid-cols-3 gap-2 text-xs text-center">
+          <div class="bg-white p-2 rounded">
+           <p class="text-slate-500">Mulai</p>
+           <p id="process-start-display" class="font-mono font-medium text-slate-700">--:--:--</p>
+          </div>
+          <div class="bg-white p-2 rounded">
+           <p class="text-slate-500">Selesai</p>
+           <p id="process-end-display" class="font-mono font-medium text-slate-700">--:--:--</p>
+          </div>
+          <div class="bg-white p-2 rounded">
+           <p class="text-slate-500">Durasi</p>
+           <p id="process-duration-display" class="font-mono font-medium text-green-600">0 menit</p>
+          </div>
+         </div>
+        </div><!-- Down Time -->
+        <div class="p-3 bg-red-50 rounded-lg">
+         <h3 class="text-sm font-semibold text-red-800 mb-2">🛑 Down Time</h3>
+         <div class="flex items-center gap-2 mb-2">
+          <button type="button" onclick="startTimer('downtime')" id="btn-downtime-start" class="timer-btn flex-1 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600"> ▶️ Start </button> <button type="button" onclick="endTimer('downtime')" id="btn-downtime-end" class="timer-btn flex-1 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600" disabled> ⏹️ End </button>
+         </div>
+         <div class="grid grid-cols-3 gap-2 text-xs text-center">
+          <div class="bg-white p-2 rounded">
+           <p class="text-slate-500">Mulai</p>
+           <p id="downtime-start-display" class="font-mono font-medium text-slate-700">--:--:--</p>
+          </div>
+          <div class="bg-white p-2 rounded">
+           <p class="text-slate-500">Selesai</p>
+           <p id="downtime-end-display" class="font-mono font-medium text-slate-700">--:--:--</p>
+          </div>
+          <div class="bg-white p-2 rounded">
+           <p class="text-slate-500">Durasi</p>
+           <p id="downtime-duration-display" class="font-mono font-medium text-red-600">00:00:00</p>
+          </div>
+         </div><!-- Downtime Details Section -->
+         <div id="downtime-section" class="hidden mt-3 p-3 bg-white rounded-lg border border-red-200">
+          <h3 class="text-xs font-semibold text-red-800 mb-3 flex items-center gap-2">⚠️ Detail Kriteria Down Time</h3>
+          <div id="downtime-items-container" class="space-y-3">
+           <!-- Downtime items will be added here -->
+          </div><button type="button" onclick="addDowntimeItem()" class="mt-3 w-full py-2 bg-red-100 text-red-700 rounded-lg text-xs font-medium hover:bg-red-200 transition flex items-center justify-center gap-2"> <span>➕</span> Tambah Kriteria Down Time </button>
+         </div>
+        </div>
+       </div><!-- Submit Button --> <button type="button" onclick="handleSubmit(event)" id="submit-btn" class="w-full mt-4 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl text-base font-semibold hover:from-blue-700 hover:to-blue-800 transition shadow-lg flex items-center justify-center gap-2"> <span>💾</span> Simpan Laporan </button>
+      </div>
+     </form>
+    </div><!-- Archive Tab -->
+    <div id="content-archive" class="tab-content hidden">
+     <div class="bg-white rounded-xl p-4 card-shadow mb-4">
+      <h2 class="text-base font-semibold text-slate-800 mb-4 flex items-center gap-2">📸 Arsip Dokumentasi Foto</h2><!-- Filter Section -->
+      <div class="grid grid-cols-2 gap-3 mb-4">
+       <div>
+        <label class="block text-sm font-medium text-slate-700 mb-2">Filter Tanggal</label> <input type="date" id="archive-filter-date" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm input-focus focus:border-blue-500 focus:outline-none" onchange="filterArchivePhotos()">
+       </div>
+       <div>
+        <label class="block text-sm font-medium text-slate-700 mb-2">Filter Work Station</label> <select id="archive-filter-ws" class="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm input-focus focus:border-blue-500 focus:outline-none bg-white" onchange="filterArchivePhotos()"> <option value="">-- Semua Work Station --</option> </select>
+       </div>
+      </div><!-- Archive Content -->
+      <div id="archive-content" class="space-y-6">
+       <div class="text-center py-8 text-slate-500">
+        <p class="text-sm">📷 Belum ada dokumentasi foto</p>
+       </div>
+      </div>
+     </div>
+    </div>
+    <script>
+    // ===== FG CODE LIST =====
+    const FG_CODES = [
+      "AGO001","AGR001","AGR002","AHA001","AL017","AMG001","AMG002","AMG003","AMG004","AMG005","AMG006","AMG007","AMG008","AMG009","AMG010","AMG011","AMG012","AMG013","AMG014","AMG015","AMG016","AMG017","AMG018","AMG019",
+      "ANT001","ANW001","ASA001","AWJ001","AYI001","BAR001","BAR002","BAR003","BAR004","BARI001","BD001","BD002",
+      "BIS001","BIS002","BIS003","BIS004","BIS005","BIS006","BIS007","BIS008","BIS009","BIS010","BIS011","BIS012","BIS013","BIS014","BIS015","BIS016","BIS017","BIS018","BIS019","BIS020","BIS021","BIS022","BIS023","BIS024","BIS025","BIS026","BIS027","BIS028","BIS029","BIS030","BIS033","BIS034","BIS035","BIS036","BIS037","BIS038","BIS039","BIS040","BIS041","BIS042","BIS043","BIS044","BIS045","BIS046","BIS047","BIS048","BIS049","BIS050","BIS051","BIS052","BIS053","BIS054","BIS055","BIS056",
+      "BJW001","BJW002","BJW003","BJW004","BJW005","BJW005A","BJW005B","BJW006","BJW006A","BJW006B","BJW006C","BJW007","BJW007A","BJW007B","BJW008","BJW009","BJW011","BJW012","BJW013","BJW015","BJW015A","BJW017","BJW018","BJW020","BJW021","BJW022","BJW023","BJW024","BJW025",
+      "BK001","BK002","BK003","BPP001","BTR001","BTR002","BUT001","CAM001",
+      "CBO001","CBO002","CBO003","CBO004","CBO005","CBO006","CBO007","CBO008","CBO009","CBO010","CBO011","CBO012","CBO013","CBO014","CBO015","CBO016","CBO017","CBO018","CBO019","CBO020","CBO021","CBO022","CBO023","CBO024","CBO025","CBO026","CBO027","CBO028","CBO029","CBO030","CBO031","CBO032","CBO033","CBO034","CBO035","CBO036","CBO037","CBO038","CBO039","CBO040","CBO041","CBO042","CBO043","CBO044","CBO045","CBO046","CBO047","CBO048","CBO049","CBO050","CBO051","CBO052","CBO053","CBO054","CBO055","CBO056","CBO057","CBO058","CBO059","CBO060","CBO061","CBO062","CBO063","CBO064","CBO065","CBO066","CBO067","CBO068","CBO069","CBO070","CBO071","CBO072","CBO073","CBO074","CBO075","CBO076","CBO077","CBO078","CBO079","CBO080","CBO081","CBO082","CBO083","CBO084","CBO085","CBO086","CBO087","CBO088","CBO089","CBO090","CBO091","CBO092","CBO093","CBO094","CBO095","CBO096","CBO097","CBO098","CBO099","CBO100","CBO101","CBO102","CBO103","CBO104","CBO105","CBO106","CBO107","CBO108","CBO109","CBO110","CBO111","CBO112","CBO113","CBO114","CBO115","CBO116","CBO117","CBO118","CBO119","CBO120","CBO121","CBO122","CBO123","CBO124","CBO125","CBO126","CBO127","CBO128","CBO129","CBO130","CBO131","CBO132","CBO133","CBO134","CBO135","CBO136","CBO137","CBO138","CBO139","CBO140","CBO141","CBO142","CBO143","CBO145","CBO146","CBO147","CBO148","CBO149","CBO150","CBO151","CBO152","CBO153","CBO154","CBO155","CBO156","CBO157","CBO158","CBO159","CBO160","CBO161","CBO162","CBO163","CBO164","CBO165","CBO166","CBO167","CBO168","CBO169","CBO170","CBO171","CBO172","CBO173","CBO174","CBO175","CBO176","CBO177","CBO178","CBO179","CBO180","CBO181","CBO182","CBO183","CBO184","CBO185","CBO186","CBO187","CBO188","CBO189","CBO190","CBO191","CBO192","CBO193","CBO194","CBO195","CBO196","CBO197","CBO198","CBO199","CBO200","CBO201","CBO202","CBO203","CBO204","CBO205","CBO206","CBO207","CBO208","CBO209","CBO210","CBO211","CBO212","CBO213","CBO214","CBO215","CBO216","CBO217","CBO218","CBO219","CBO220","CBO221","CBO222","CBO223","CBO224","CBO225","CBO226","CBO227","CBO228","CBO229","CBO230","CBO231","CBO232","CBO233","CBO234","CBO235","CBO236","CBO237","CBO238","CBO239","CBO240","CBO241","CBO242","CBO243","CBO244","CBO245","CBO246","CBO247","CBO248","CBO249","CBO250","CBO251","CBO252","CBO253","CBO254","CBO255","CBO256","CBO257","CBO258","CBO259","CBO260","CBO261","CBO262","CBO263","CBO264","CBO265","CBO266","CBO267","CBO268","CBO269","CBO270","CBO271","CBO272","CBO273","CBO274","CBO275","CBO276","CBO277","CBO278","CBO279","CBO280","CBO281","CBO282","CBO283","CBO284","CBO285","CBO286","CBO287","CBO288","CBO289","CBO290","CBO291","CBO292","CBO293","CBO294","CBO295","CBO296","CBO297","CBO298","CBO299","CBO300","CBO301","CBO302","CBO303","CBO304","CBO305","CBO306","CBO307","CBO308","CBO309","CBO310","CBO311","CBO312","CBO313","CBO314","CBO315","CBO316","CBO317","CBO318","CBO319","CBO320","CBO321","CBO322","CBO323","CBO324","CBO325","CBO326","CBO327","CBO328","CBO329","CBO330","CBO331","CBO332","CBO333","CBO334","CBO335","CBO336","CBO337","CBO338","CBO339","CBO340","CBO341","CBO342","CBO343","CBO344","CBO345","CBO346","CBO347","CBO348","CBO349","CBO350","CBO351","CBO352","CBO353","CBO354","CBO355","CBO356","CBO357","CBO358","CBO359","CBO360","CBO361","CBO362","CBO363","CBO364","CBO365",
+      "CIL001","CIL002","CKB001","CMI001","CRI001","CRI002","CRI003","CRI004","CRI005","CRI006","CRI007","CRI008","CRI009","CRI010","CRI011",
+      "CTI001","CTI002","CTI003","CTI004","CTI005","CTI006","CTI007","CTI008","CTI009","CTI010","CTI011","CTI012","CTI013","CTI014","CTI015","CTI016","CTI017","CTI018","CTI019","CTI020","CTI021","CTI022","CTI023","CTI024","CTI025","CTI026","CTI027","CTI028","CTI029","CTI030","CTI031","CTI032","CTI033","CTI034","CTI035","CTI036","CTI037","CTI038","CTI039","CTI040","CTI041","CTI042","CTI043","CTI044","CTI045","CTI046","CTI047","CTI048","CTI049","CTI050","CTI051","CTI052","CTI053","CTI054","CTI055","CTI056","CTI057","CTI058","CTI059","CTI060","CTI061","CTI062","CTI063","CTI064","CTI065","CTI066","CTI067","CTI068","CTI069","CTI070","CTI071","CTI072","CTI073","CTI074","CTI075","CTI076","CTI077","CTI078","CTI079","CTI080","CTI081","CTI082","CTI083","CTI084","CTI085","CTI086","CTI087","CTI088","CTI089","CTI090","CTI091","CTI092","CTI093","CTI094","CTI095","CTI096","CTI097","CTI098","CTI099","CTI100","CTI101","CTI102","CTI103","CTI104","CTI105","CTI106","CTI112","CTI113","CTI114","CTI115","CTI116","CTI117","CTI118","CTI119","CTI120","CTI121","CTI122","CTI123","CTI124","CTI125","CTI126","CTI127","CTI128","CTI129","CTI130","CTI131","CTI132","CTI133","CTI134","CTI135","CTI136","CTI137","CTI138","CTI139","CTI140","CTI141","CTI142","CTI143","CTI144","CTI145","CTI146","CTI147","CTI148","CTI149","CTI150","CTI151","CTI152","CTI153","CTI154","CTI155","CTI156","CTI157","CTI158","CTI159","CTI160","CTI161","CTI162","CTI163","CTI164","CTI165","CTI166","CTI167","CTI168","CTI169","CTI170","CTI171","CTI172","CTI173","CTI174","CTI175","CTI176","CTI177","CTI178","CTI179","CTI180","CTI181","CTI182","CTI183","CTI184","CTI185","CTI186","CTI187","CTI188","CTI189","CTI190","CTI191","CTI192","CTI193","CTI194","CTI195","CTI196","CTI197","CTI198","CTI199","CTI200","CTI201","CTI202","CTI203","CTI204","CTI205","CTI206","CTI207","CTI208","CTI209","CTI210","CTI211","CTI212","CTI213","CTI214","CTI215","CTI216","CTI217","CTI218","CTI219","CTI220","CTI221","CTI222","CTI223","CTI224","CTI225","CTI226","CTI227","CTI228","CTI229","CTI230","CTI231","CTI232","CTI233","CTI234","CTI235","CTI236","CTI237","CTI238","CTI239","CTI240","CTI241","CTI242","CTI243","CTI244","CTI245","CTI246","CTI247","CTI248","CTI249","CTI250","CTI251","CTI252","CTI253","CTI254","CTI255","CTI255a","CTI256","CTI257","CTI258","CTI259","CTI260","CTI261","CTI262","CTI263","CTI264","CTI265","CTI266","CTI267","CTI268","CTI269","CTI270","CTI271","CTI272","CTI273","CTI274","CTI275","CTI276","CTI277","CTI278",
+      "CWC001","DAI001","DAI002","DAI003","DAI004","DAI005","DAI007","DAI008","DAI009","DAI010","DAI011","DAI012","DAI013","DAI014","DAI015","DAI016","DAI017","DAI018","DAI019","DAI020","DAI021","DAI022","DAI023","DAI024","DAI025","DAI026","DAI027","DAI028","DAI029","DAI030","DAI031","DAI032","DAI033","DAI034","DAI035","DAI036","DAI037","DAI038","DAI039","DAI040","DAI041","DAI042","DAI043","DAI044","DAI045","DAI046","DAI047","DAI048","DAI049","DAI050",
+      "DDI001","DDI002","DDI003","DDI004","DDI005","DDI006","DDI007","DDI008","DDI009","DDI010","DDI011","DDI012","DDI013","DDI014","DDI015",
+      "DJB001","DJM001","DJM002","DJM003","DJM004","DKA001","DKA002","DMP001","DMP002","DSN001","DSN002","DSN003",
+      "ENV001","ENV002","EST001",
+      "GCK001","GMD001","GMD002","GSM001","GSM002",
+      "GTM001","GTM002","GTM003","GTM004","GTM005","GTM006","GTM007","GTM008","GTM009","GTM010","GTM011","GTM012","GTM013","GTM014","GTM015","GTM016","GTM017","GTM018","GTM019","GTM020","GTM021","GTM022","GTM023","GTM024","GTM025","GTM026","GTM027","GTM028","GTM029","GTM030","GTM031","GTM032","GTM033","GTM034","GTM035","GTM036","GTM037","GTM038","GTM039","GTM040","GTM041","GTM042","GTM043","GTM044","GTM045","GTM046","GTM047","GTM048","GTM049","GTM050","GTM051","GTM052","GTM053","GTM054","GTM055","GTM056","GTM057","GTM058","GTM059","GTM060","GTM061","GTM062","GTM063","GTM064","GTM065","GTM066","GTM067","GTM068","GTM069","GTM070","GTM071","GTM072","GTM073","GTM074","GTM075","GTM076","GTM077","GTM078","GTM079","GTM080","GTM081","GTM082","GTM083","GTM084","GTM085","GTM086","GTM087","GTM088","GTM089","GTM090","GTM091","GTM092","GTM093","GTM094","GTM095","GTM096","GTM097","GTM098","GTM099","GTM100","GTM101","GTM102","GTM103","GTM104","GTM105","GTM106","GTM107","GTM108","GTM109","GTM110","GTM111","GTM112","GTM113","GTM114","GTM115","GTM116","GTM117","GTM118","GTM119","GTM120","GTM121","GTM122","GTM123","GTM124","GTM125","GTM126","GTM127","GTM128","GTM129","GTM130","GTM131","GTM132","GTM133","GTM134","GTM135","GTM136","GTM137","GTM138","GTM139","GTM140","GTM141","GTM142","GTM143","GTM144","GTM145","GTM146","GTM147","GTM148","GTM149","GTM150","GTM151","GTM152","GTM153","GTM154","GTM155","GTM156","GTM157","GTM158","GTM159","GTM160","GTM161","GTM162","GTM163","GTM164","GTM165","GTM166","GTM167","GTM168","GTM169","GTM169a","GTM170","GTM170a","GTM171","GTM171a","GTM172","GTM172a","GTM173","GTM173a","GTM174","GTM174a","GTM175","GTM176","GTM177","GTM178","GTM179","GTM180","GTM181","GTM182","GTM183","GTM184","GTM185","GTM186","GTM187","GTM188","GTM189","GTM190","GTM191","GTM192","GTM193","GTM194","GTM195","GTM196","GTM197","GTM198","GTM199","GTM200","GTM201","GTM202","GTM203","GTM204","GTM205","GTM206","GTM207","GTM208","GTM209","GTM210","GTM211","GTM212","GTM213","GTM214","GTM215","GTM216","GTM217","GTM218","GTM219","GTM220","GTM221","GTM222","GTM223","GTM224","GTM225","GTM226","GTM227","GTM228","GTM229","GTM230","GTM231","GTM232","GTM233","GTM234","GTM235","GTM236","GTM237","GTM238","GTM239","GTM240","GTM241","GTM242","GTM243","GTM244","GTM245","GTM246","GTM247","GTM248","GTM249","GTM250","GTM251","GTM252","GTM253","GTM254","GTM255","GTM256","GTM257","GTM258","GTM259","GTM260","GTM261","GTM262","GTM263","GTM264","GTM265","GTM266","GTM267","GTM268","GTM269","GTM270","GTM271","GTM272","GTM273","GTM274","GTM275","GTM276","GTM277","GTM278","GTM279","GTM280","GTM281","GTM282","GTM283","GTM284","GTM285","GTM286","GTM287","GTM288","GTM289","GTM290","GTM291","GTM292","GTM293","GTM294","GTM295","GTM296","GTM297","GTM298","GTM299","GTM300","GTM301","GTM302","GTM303","GTM304","GTM305","GTM306","GTM307","GTM308","GTM309","GTM310","GTM311","GTM312","GTM313","GTM314","GTM315","GTM316","GTM317","GTM318","GTM319","GTM320","GTM321","GTM322","GTM323","GTM324","GTM325","GTM326","GTM327","GTM328","GTM329","GTM330","GTM331","GTM332","GTM333","GTM334","GTM335","GTM336","GTM337","GTM338","GTM339","GTM340","GTM341","GTM342","GTM343","GTM344","GTM345","GTM346","GTM347","GTM348","GTM349","GTM350","GTM351","GTM352","GTM353","GTM354","GTM355","GTM356","GTM357","GTM358","GTM359","GTM360","GTM361","GTM362","GTM363","GTM364","GTM365","GTM366","GTM367","GTM368","GTM369","GTM370","GTM371","GTM372","GTM373","GTM374","GTM375","GTM376","GTM377","GTM378","GTM379","GTM380","GTM381","GTM382","GTM383","GTM384","GTM385","GTM386","GTM387","GTM388","GTM389","GTM390","GTM391","GTM392","GTM393","GTM394","GTM395","GTM396","GTM397","GTM398","GTM399","GTM400","GTM401","GTM402","GTM403","GTM404","GTM405","GTM406","GTM407","GTM408","GTM409","GTM410","GTM411","GTM412","GTM413","GTM414","GTM415","GTM416","GTM417","GTM418","GTM419","GTM420","GTM421","GTM422","GTM423","GTM424","GTM425","GTM426","GTM427","GTM428","GTM429","GTM430","GTM431","GTM432","GTM433","GTM434","GTM435","GTM436","GTM437","GTM438","GTM439","GTM440","GTM441","GTM442","GTM443","GTM444","GTM445","GTM446","GTM447","GTM448","GTM449","GTM450","GTM451","GTM452","GTM453","GTM454","GTM455","GTM456","GTM457","GTM458","GTM459","GTM460","GTM461","GTM462","GTM463","GTM464","GTM465","GTM466","GTM467","GTM468","GTM469","GTM470","GTM471","GTM472","GTM473","GTM474","GTM475","GTM476","GTM477","GTM478","GTM479","GTM480","GTM481","GTM482","GTM483","GTM484","GTM485","GTM486","GTM487","GTM488","GTM489","GTM490","GTM491","GTM492","GTM493","GTM494","GTM495","GTM496","GTM497","GTM498","GTM499","GTM500","GTM501","GTM502","GTM503","GTM504","GTM505","GTM506","GTM507","GTM508","GTM509","GTM510","GTM511","GTM512","GTM513","GTM514","GTM515","GTM516","GTM517","GTM518","GTM519","GTM520","GTM521","GTM522","GTM523","GTM524","GTM525","GTM526","GTM527","GTM528","GTM529","GTM530","GTM531","GTM532","GTM533","GTM534","GTM535","GTM536","GTM537","GTM538","GTM539","GTM540","GTM541","GTM542","GTM543","GTM544","GTM545","GTM546","GTM547","GTM548","GTM549","GTM550","GTM551","GTM552","GTM553","GTM554","GTM555","GTM556","GTM557","GTM558","GTM559","GTM560","GTM561","GTM562","GTM563","GTM564","GTM565","GTM566","GTM567","GTM568","GTM569","GTM570","GTM571","GTM572","GTM573","GTM574","GTM575","GTM576","GTM577","GTM578","GTM579","GTM580","GTM581","GTM582","GTM583","GTM584","GTM585","GTM586","GTM587","GTM588","GTM589","GTM590","GTM591","GTM592","GTM593","GTM594","GTM595","GTM596","GTM597","GTM598","GTM599","GTM600","GTM601","GTM602","GTM603","GTM604","GTM605","GTM606","GTM607","GTM608","GTM609","GTM610","GTM611","GTM612","GTM613","GTM614","GTM615","GTM616","GTM617","GTM618","GTM619","GTM620","GTM621","GTM622","GTM623","GTM624","GTM625","GTM626","GTM627","GTM628","GTM629","GTM630","GTM631","GTM632","GTM633","GTM634","GTM635","GTM636","GTM637","GTM638","GTM639","GTM640","GTM641","GTM642","GTM643","GTM644","GTM645","GTM646","GTM647","GTM648","GTM649","GTM650","GTM651","GTM652","GTM653","GTM654","GTM655","GTM656","GTM657","GTM658","GTM659","GTM660","GTM661","GTM662","GTM663","GTM664","GTM665","GTM666","GTM667","GTM668","GTM669","GTM670","GTM671","GTM672","GTM673","GTM674","GTM675","GTM676","GTM677","GTM678","GTM679","GTM680","GTM681","GTM682","GTM683","GTM684","GTM685","GTM686","GTM687","GTM688","GTM689","GTM690","GTM691","GTM692","GTM693","GTM694","GTM695","GTM696","GTM697","GTM698","GTM699","GTM700","GTM701","GTM702","GTM703","GTM704","GTM705","GTM706","GTM707","GTM708","GTM709","GTM710","GTM711","GTM712","GTM713","GTM714","GTM714a","GTM714b","GTM715","GTM715a","GTM715b","GTM716","GTM716a","GTM716b","GTM716c","GTM716d","GTM717","GTM717a","GTM717b","GTM718","GTM718a","GTM718b","GTM718c","GTM718d","GTM719","GTM719a","GTM719b","GTM719c","GTM720","GTM720a","GTM720b","GTM720c","GTM721","GTM721a","GTM721b","GTM721c","GTM722","GTM722a","GTM722b","GTM722c","GTM723","GTM723a","GTM723b","GTM723c","GTM724","GTM724a","GTM724b","GTM724c","GTM725","GTM725a","GTM725b","GTM725c","GTM726","GTM726a","GTM726b","GTM727","GTM727a","GTM727b","GTM728","GTM728a","GTM729","GTM729a","GTM729b","GTM730","GTM730a","GTM731","GTM731a","GTM731b","GTM732","GTM732a","GTM732b","GTM733","GTM733a","GTM733b","GTM734","GTM734a","GTM734b","GTM735","GTM735a","GTM735b","GTM736","GTM736a","GTM736b","GTM737","GTM737a","GTM737b","GTM737c","GTM738","GTM738a","GTM738b","GTM739","GTM739a","GTM739b","GTM740","GTM740a","GTM740b","GTM741","GTM741a","GTM741b","GTM742","GTM742a","GTM742b","GTM743","GTM743a","GTM743b","GTM743c","GTM744","GTM744a","GTM744b","GTM744c","GTM745","GTM745a","GTM745b","GTM745c","GTM746","GTM746a","GTM746b","GTM746c","GTM747","GTM747a","GTM748","GTM748a","GTM748b","GTM749","GTM749a","GTM749b","GTM750","GTM750a","GTM750b","GTM751","GTM751a","GTM751b","GTM752","GTM752a","GTM752b","GTM753","GTM753a","GTM753b","GTM754","GTM754a","GTM754b","GTM755","GTM755a","GTM755b","GTM756","GTM756a","GTM756b","GTM757","GTM757a","GTM757b","GTM758","GTM758a","GTM758b","GTM759","GTM759a","GTM759b","GTM760-1","GTM760-2","GTM760a","GTM760b","GTM760c","GTM761","GTM761a","GTM761b","GTM762","GTM762a","GTM762b","GTM762c","GTM763","GTM763a","GTM763b","GTM763c","GTM764","GTM764a","GTM764b","GTM764c","GTM765","GTM765a","GTM765b","GTM765c","GTM766","GTM766a","GTM766b","GTM766c","GTM767","GTM767a","GTM767b","GTM767c","GTM768","GTM768a","GTM768b","GTM769","GTM769a","GTM770","GTM770a","GTM770b","GTM770c","GTM771","GTM771a","GTM771b","GTM771c","GTM772","GTM772a","GTM772b","GTM773","GTM773a","GTM773b","GTM774","GTM774a","GTM774b","GTM774c","GTM775","GTM775a","GTM775b","GTM775c","GTM776","GTM776a","GTM776b","GTM776c","GTM777","GTM777a","GTM777b","GTM777c","GTM778","GTM778a","GTM778b","GTM779","GTM779a","GTM779b","GTM779c","GTM780","GTM780a","GTM780b","GTM780c","GTM781","GTM781a","GTM781b","GTM782","GTM782a","GTM782b","GTM783","GTM783a","GTM783b","GTM784","GTM784a","GTM784b","GTM785","GTM785a","GTM785b","GTM786","GTM786a","GTM786b","GTM787","GTM787a","GTM787b","GTM788","GTM788a","GTM788b","GTM789","GTM789a","GTM789b","GTM790","GTM790a","GTM790b","GTM790c","GTM791","GTM791a","GTM791b","GTM791c","GTM792","GTM792a","GTM792b","GTM792c","GTM793","GTM793a","GTM793b","GTM793c","GTM794","GTM794a","GTM794b","GTM795","GTM795a","GTM796","GTM796a","GTM796b","GTM797","GTM797a","GTM797b","GTM798","GTM798a","GTM798b","GTM798c","GTM799","GTM799a","GTM799b","GTM799c","GTM800","GTM800a","GTM800b","GTM801","GTM801a","GTM801b","GTM802","GTM802a","GTM802b","GTM803","GTM803a","GTM803b","GTM803c","GTM804","GTM804a","GTM804b","GTM804c","GTM805","GTM805a","GTM805b","GTM806","GTM806a","GTM806b","GTM807","GTM807a","GTM807b","GTM808","GTM808a","GTM808b","GTM809","GTM809a","GTM809b","GTM810","GTM810a","GTM810b","GTM811","GTM811a","GTM811b","GTM812","GTM812a","GTM812b","GTM813","GTM813a","GTM813b","GTM814","GTM814a","GTM814b","GTM814c","GTM814d","GTM815","GTM815a","GTM815b","GTM815c","GTM816","GTM816a","GTM816b","GTM816c","GTM816d","GTM817","GTM817a","GTM817b","GTM817c","GTM818","GTM818a","GTM818b","GTM819","GTM819a","GTM819b","GTM819c","GTM820","GTM820a","GTM820b","GTM820c","GTM821","GTM821a","GTM821b","GTM821c","GTM822","GTM822a","GTM822b","GTM822c","GTM823","GTM823a","GTM823b","GTM823c","GTM824","GTM824a","GTM824b","GTM824c","GTM825","GTM825a","GTM825b","GTM825c","GTM826","GTM826a","GTM826b","GTM826c","GTM827","GTM827a","GTM828","GTM828a","GTM828b","GTM829","GTM829a","GTM829b","GTM829c","GTM830","GTM830a","GTM830b","GTM830c","GTM831","GTM831a","GTM831b","GTM831c","GTM832","GTM832a","GTM832b","GTM833","GTM833a","GTM833b","GTM834","GTM834a","GTM834b","GTM835","GTM835a","GTM835b","GTM836","GTM836a","GTM836b","GTM837","GTM837a","GTM837b","GTM838","GTM838a","GTM838b","GTM839","GTM839a","GTM839b","GTM840","GTM840a","GTM841","GTM841a","GTM842","GTM842a","GTM842b","GTM843","GTM843a","GTM843b","GTM843c","GTM844","GTM844a","GTM844b","GTM844c","GTM845","GTM845a","GTM845b","GTM845c","GTM846","GTM846a","GTM846b","GTM846c","GTM847","GTM847a","GTM847b","GTM847c","GTM848","GTM848a","GTM848b","GTM848c","GTM849","GTM849a","GTM849b","GTM849c","GTM850","GTM850a","GTM850b","GTM850c","GTM851","GTM851a","GTM851b","GTM851c","GTM852","GTM852a","GTM852b","GTM852c","GTM853","GTM853a","GTM853b","GTM853c","GTM854","GTM854a","GTM854b","GTM854c","GTM855","GTM855a","GTM855b","GTM855c","GTM856","GTM856a","GTM856b","GTM856c","GTM857","GTM857a","GTM857b","GTM857c","GTM857d","GTM858","GTM858a","GTM858b","GTM858c","GTM858d","GTM859","GTM859a","GTM859b","GTM859c","GTM859d","GTM860","GTM860a","GTM860b","GTM860c","GTM860d","GTM861","GTM861a","GTM861b","GTM861c","GTM861d","GTM862","GTM862a","GTM862b","GTM862c","GTM862d","GTM863","GTM863a","GTM863b","GTM863c","GTM863d","GTM864","GTM864a","GTM864b","GTM864c","GTM864d","GTM865","GTM865a","GTM865b","GTM865c","GTM865d","GTM866","GTM866a","GTM866b","GTM866c","GTM866d","GTM867","GTM867a","GTM867b","GTM867c","GTM867d","GTM868","GTM868a","GTM868b","GTM869","GTM869a","GTM870","GTM870a","GTM870b","GTM871","GTM871a",
+      "HAI002","HAI003","HAI004","HAI005","HAI006","HAI007","HAI008","HAI009","HAI010","HAI011","HAI012","HAI013","HAI014","HAI015","HAI016","HAI017","HAI018","HAI019","HAI020","HAI021","HAI022","HAI023","HAI024","HAI025","HAI026","HAI027",
+      "HBF001","HBF002","HBF003","HBF004","HBF005","HDX001","HDX002","HDX003","HDX004","HDX004a","HDX005","HDX006","HDX006a","HDX007",
+      "HP001","HPM001","HPM002","HPM003","HPM004","HPM005","HPM006","HPM007","HPM008","HPM009","HPM010","HPM011","HPM012","HPM013","HPM014","HPM015","HPM016","HPM017","HPM018","HPM019","HPM020",
+      "HRM001","HS001","HS002","HS003",
+      "IAI001","IAI002","IAI003","IAI004","IAI005","IAI006","IBE001","IFU001","IFU002","IFU003","IFU004","IFU005","IFU006","IFU007","IFU008","IFU009",
+      "IIH001","IIH002","ILI001","ILI002","ILI003","IMST001","IMST002","IMST003","IMST004","IMST005","IMST006",
+      "INT000","INT001","INT002","INT003","INT004","INT005","INT006","INT007","INT008","INT009","INT010","INT011","INT012","INT013","INT014","INT015","INT016","INT017","INT018","INT019","INT020","INT021","INT023","INT024","INT025","INT026","INT027","INT028","INT029","INT030","INT031","INT032","INT033","INT034","INT035","INT036","INT037","INT038","INT039","INT040","INT041","INT042","INT043","INT044","INT046","INT047","INT048","INT049","INT050","INT051","INT052","INT053","INT054","INT055","INT056","INT057","INT058","INT059","INT060","INT061","INT062","INT063","INT064","INT065","INT066","INT067","INT068","INT069","INT070","INT071","INT072","INT073","INT074","INT075","INT076","INT077","INT078","INT079","INT080","INT081","INT082","INT083","INT084","INT085","INT086","INT087","INT088","INT089","INT090","INT091","INT092","INT093","INT094","INT095","INT096","INT097","INT098","INT099","INT100","INT101","INT102","INT103","INT104","INT105","INT106","INT107","INT108","INT109","INT110","INT111","INT112","INT113","INT114","INT115","INT116","INT117","INT118","INT119","INT120","INT121","INT122","INT123","INT124","INT125","INT126","INT127","INT128","INT129","INT130","INT131","INT132","INT133","INT134","INT135","INT136","INT137","INT138","INT139","INT140","INT141","INT142","INT143","INT144","INT145","INT146","INT147","INT148","INT149","INT150","INT151","INT152","INT153","INT154","INT155","INT156","INT157","INT158","INT159","INT160","INT161","INT162","INT163","INT164","INT165","INT166","INT167","INT168","INT169","INT170","INT171","INT172","INT173","INT174","INT175","INT176","INT177","INT178","INT179","INT180","INT181","INT182","INT183","INT184","INT185","INT186","INT187","INT188","INT189","INT190","INT191","INT192","INT193","INT194","INT195","INT196","INT197","INT198","INT199","INT200","INT201","INT202","INT203","INT204","INT205","INT206","INT207","INT208","INT209","INT210","INT211","INT212","INT213","INT214","INT215","INT216","INT217","INT218","INT219","INT220","INT221","INT222","INT223","INT224","INT225","INT226","INT227","INT228","INT229","INT230","INT231","INT232","INT233","INT234","INT235","INT236","INT237","INT238","INT239","INT240","INT241","INT242","INT243","INT244","INT245","INT246","INT247","INT248","INT249","INT250","INT251","INT252","INT253","INT254","INT255","INT256","INT257","INT258","INT259","INT260","INT261","INT262","INT263","INT264","INT265","INT266","INT267","INT268","INT269","INT270","INT271","INT272","INT273","INT274","INT275","INT276","INT277","INT278","INT279","INT280","INT281","INT282","INT283","INT284","INT285","INT286","INT287","INT288","INT289","INT290","INT291","INT292","INT293","INT293a","INT294","INT294a","INT295","INT295a","INT296","INT296a","INT297","INT297a","INT298","INT298a","INT299","INT300","INT300a","INT301","INT301a","INT302","INT302a","INT303","INT303a","INT304","INT304a","INT305","INT305a","INT306","INT306a","INT307","INT307a","INT308","INT309","INT310","INT311","INT312","INT313","INT314","INT315","INT316","INT317","INT318","INT319","INT320","INT321","INT322","INT323","INT324","INT329","INT330","INT331","INT332","INT333","INT334","INT335","INT336","INT337","INT338","INT339","INT340","INT341","INT342","INT343","INT344","INT345","INT346","INT347","INT348","INT349","INT350","INT351","INT352","INT353","INT354","INT355","INT356","INT357","INT358","INT359","INT360","INT361","INT362","INT363","INT364","INT365","INT366","INT367","INT368","INT370","INT371","INT372",
+      "IPI001","IPI002","IPI003","IPI004","IPI005","IPI006","IPI007","IPI008","IPI009","IPI010","IPI012","IPI013","IPI014","IPI015","IPI016","IPI017","IPI018","IPI019","IPI020","IPI021","IPI022","IPI023","IPI024","IPI025","IPI026","IPI027","IPI028","IPI029","IPI030",
+      "ISS001","ISS002","ISS003","ISS004","ISS005","ISS006","ISS007","ISS008",
+      "JAM001","JAM002","JAM003","JAM004","JAM005","JAM006","JAM007","JAM008","JAM009","JAM010","JAM011","JAM012","JAM013","JAM014","JAM015","JAM016","JAM017","JAM018","JAM019","JAM020","JAM021","JAM022","JAM023",
+      "JB001","JB002","JBK001","JGA001","JGA002","JIVA001","JIVA002","JKS001","JKS002","JKS003","JKS004",
+      "JOI001","JOI002","JOI003","JOI004","JOI005","JOI006","JOI007","JOI008","JOI009","JOI010","JOI011","JOI012","JOI013",
+      "JTP001","JTP002","JTP003","JTP004","JTP005","JTP006","JTP007",
+      "KFA001","KFA002","KFA003","KMB001","KMB002","KMS001","KMS002","KMS003","KOM001","KOM002","KOM003","KOM004","KOM005","KOM006","KOM008",
+      "KS001","KS002","KS003","KS004","KSA001","KSC001","KSC002","KSC003","KSC004","KSC005","KSC006","KSC007","KSI001","KSM001",
+      "KTI001","KTI002","KTI003","KTI004","KTI005","KTI006","KTI007","KTI008","KTI009","KTI010","KTI011","KTI012","KTI013","KTI014","KTI015","KTI016","KTI017","KTI018","KTI019","KTI020","KTI021","KTI022","KTI023","KTI024","KTI025","KTI026","KTI027","KTI028","KTI029","KTI030","KTI031","KTI032","KTI033","KTI034","KTI035","KTI036","KTI037","KTI038","KTI039","KTI040","KTI041","KTI042","KTI043","KTI044","KTI045","KTI046","KTI047","KTI048","KTI049","KTI050","KTI051","KTI052","KTI053","KTI054","KTI055",
+      "KTR001","KTR002",
+      "LAS001","LAS002","LAS003","LAS004","LAS005","LAS006","LAS007","LAS008","LAS009","LAS010",
+      "LCI001","LCI002","LCI003","LCI004","LMA001","LMA002","LMA003","LMA004","LMA005","LMA006","LMA007",
+      "LSS001","LSS002","LSS003","LTI001","LTI002","LTI003","LTI004","LTI005","LTI006","LTI007","LTI008","LTI009","LTI010","LTI011","LTI012","LTI013","LTI014","LTI015","LTI016",
+      "MAG001","MCI001","MCI002","MCI002A","MCI004","MCI004A","MCI005","MCI005A","MCI006","MCI006A","MCI007","MCI007A","MCI008","MCI008A","MCI009","MCI009A","MCI010","MCI010A","MCI011","MCI011A","MCI012","MCI013","MCI013A","MCI013B","MCI013C",
+      "MFB001","MH001","MIJ001","MIJ002","MIJ003","MIJ004","MIJ005","MIJ006","MIT001","MKO001","MKP001","MOA001",
+      "MPR001","MPR002","MPR003","MPR004","MSD001","MSD002","RMS002","MSJ001","MSJ002","MSJ003","MSJ004","MSO001","MSO002",
+      "MTI001","MTI002","MTM001",
+      "NAGA001","NAGA002","NAGA003","NAGA004","NAGA005","NAGA006","NAGA007","NAGA008","NAGA009","NAGA010","NAGA011","NAGA012",
+      "NOI001","NOI002","NOI003","NOI004","NPR001","NPR002","NPR003","NVI001","NVI002",
+      "PAS001","PBH001","PBH002",
+      "PGL001","PGL002","PGL003","PGL004","PGL005","PGL006","PGL007","PGL008","PGL009","PGL010","PGL011","PGL012","PGL013","PGL014","PGL015","PGL016","PGL017","PGL018","PGL019","PGL020","PGL021","PGL022","PGL023","PGL024","PGL025","PGL026","PGL027","PGL028","PGL029","PGL030","PGL031","PGL032","PGL033","PGL034","PGL035","PGL036","PGL037","PGL038","PGL039","PGL040","PGL041","PGL042","PGL043","PGL044","PGL045","PGL046","PGL047","PGL048","PGL049","PGL050","PGL051","PGL052","PGL053","PGL054","PGL055","PGL056","PGL057","PGL058","PGL059","PGL060","PGL061","PGL062","PGL063","PGL064","PGL065","PGL066","PGL067","PGL068","PGL069","PGL070","PGL071","PGL072","PGL073","PGL074","PGL075","PGL076","PGL077","PGL078","PGL079","PGL080","PGL081","PGL082","PGL083","PGL084","PGL085","PGL086","PGL087","PGL088","PGL089","PGL090","PGL091","PGL092","PGL093","PGL094","PGL095","PGL096","PGL097","PGL098","PGL099","PGL100","PGL101","PGL102","PGL103","PGL104","PGL105","PGL106","PGL107","PGL108","PGL109","PGL110","PGL111","PGL112","PGL113","PGL114","PGL115","PGL116","PGL117","PGL118","PGL119","PGL120","PGL121","PGL122","PGL125","PGL126","PGL127","PGL128","PGL129","PGL130","PGL131","PGL132","PGL133","PGL134","PGL135","PGL136","PGL137","PGL138","PGL139","PGL140","PGL141","PGL142","PGL143","PGL144","PGL145","PGL146","PGL147","PGL148","PGL149","PGL150","PGL151","PGL152","PGL153","PGL154","PGL155","PGL156","PGL157","PGL158","PGL159","PGL160","PGL161","PGL162","PGL163","PGL164","PGL165","PGL166","PGL167","PGL168","PGL169","PGL170","PGL171","PGL172","PGL173","PGL174","PGL175","PGL176","PGL177","PGL177a","PGL177b","PGL178","PGL179","PGL180","PGL181","PGL182","PGL183","PGL184","PGL185","PGL186","PGL187",
+      "PKP001","PLI001","PMN001","PMN002","PMS001",
+      "POSI001","POSI001A","POSI001B","POSI002","POSI002A","POSI003","POSI003A","POSI004","POSI005","POSI006","POSI007","POSI008","POSI009","POSI010","POSI011",
+      "PTK001","PTK002","PTK003","PTK004","PTR001","PTR002","PTR003","PYR001",
+      "QW001","QW002","QW003","QW004","QW005","QW006","QW007","QW008","QW009","QW010","QW011","QW012","QW013","QW014","QW015","QW016","QW017","QW018","QW019","QW020","QW021","QW022","QW023","QW024","QW025","QW026","QW027","QW028","QW029","QW030","QW031","QW032","QW033","QW034","QW035","QW036","QW037","QW038","QW039","QW040","QW041","QW042","QW043","QW044","QW045","QW046","QW047","QW048","QW049","QW050","QW051","QW052","QW053","QW054","QW055","QW056","QW057","QW058","QW059","QW060","QW061","QW062","QW063","QW064","QW065","QW066","QW067","QW068","QW069","QW070","QW071","QW072","QW073","QW074","QW075","QW076","QW077","QW078","QW079","QW081","QW082","QW083","QW084","QW085","QW086","QW087","QW088","QW089","QW090","QW091","QW092","QW093","QW094","QW095","QW096","QW097","QW098","QW099","QW100","QW101","QW102","QW103","QW104","QW105","QW106","QW107","QW108","QW109","QW110","QW111","QW112","QW113","QW114","QW115","QW116","QW117","QW118","QW119","QW120","QW121","QW122","QW123","QW124","QW125","QW126","QW127","QW128","QW129","QW130","QW131","QW132","QW133","QW134","QW135","QW136","QW137","QW138","QW139","QW140","QW141","QW142","QW143","QW144","QW145","QW146","QW147","QW148","QW149","QW150","QW151","QW152","QW153","QW154","QW155","QW156","QW157","QW158","QW159",
+      "RF001","RF002","RF003","RM900003","RMS001","RMS002","RMS003","RMS004","RMS005",
+      "RN001","RN002","RN003","RN004","RN005","RSI001","RSI002","RSI003","RSI004","RSI005",
+      "RWA001","RWA002","RWA003","RWA004","RWA005","RWA006","RWA007",
+      "SAKA001","SAKA002","SAKA003","SAKA004","SAKA005","SAKA006","SAKA007","SAKA008","SAKA009","SAKA010","SAKA011","SAKA012","SAKA013","SAKA014","SAKA015","SAKA016",
+      "SAS001","SAS002","SAS003","SAS004","SBE001","SBE002","SBE003","SBE004","SBE005","SBL001",
+      "SCI001","SCI002","SCI003","SCI004","SCR001","SCR002","SGI001","SIS001","SKG001","SKI001","SKI002","SKI003","SKS001","SKS002",
+      "SM001","SM002","SM003",
+      "SMA001","SMA002","SMA003","SMA004","SMA005","SMA006","SMA007","SMA008","SMA009","SMA010","SMA011","SMA012","SMA013","SMA014","SMA015","SMA016","SMA017","SMA018","SMA019","SMA020","SMA021","SMA022","SMA023","SMA024","SMA025","SMA026","SMA027","SMA028","SMA029","SMA030","SMA031","SMA032","SMA033","SMA034","SMA035","SMA036","SMA037","SMA038","SMA039","SMA040","SMA041","SMA042","SMA043","SMA044","SMA044a","SMA045","SMA045a","SMA046","SMA047","SMA048","SMA049","SMA050a","SMA051","SMA052","SMA053","SMA054","SMA055","SMA056","SMA057","SMA058","SMA059","SMA060","SMA061","SMA062","SMA063","SMA064","SMA065","SMA066","SMA067","SMA068","SMA069","SMA070","SMA071","SMA072","SMA073","SMA074","SMA075","SMA076","SMA077","SMA078","SMA079","SMA080","SMA081","SMA082","SMA083","SMA084","SMA085","SMA086","SMA087","SMA088","SMA089","SMA090","SMA091","SMA092","SMA093","SMA094","SMA095","SMA096","SMA097","SMA098","SMA099","SMA100","SMA101","SMA102","SMA103","SMA104","SMA105","SMA106","SMA107","SMA108","SMA109",
+      "SPS001","SPS002","SPS003","SPS004","SRB001","SRJ001",
+      "SSF01","SSF02","SSF03","SSF04","SSF05","SSF06","SSF07","SSF08","SSF09","SSF10","SSF11","SSF12","SSF13","SSF14","SSF15","SSF16","SSF17","SSF18","SSF19","SSF20",
+      "ST001","ST002","ST003","SYT001","SYT002","SYT003","SYT004","SYT005",
+      "TI001","TI002","TI003","TJP001","TKK001","TKK002","TKK003","TKK004","TKK005","TKK006","TNI001",
+      "TWI001","TWI01001","TWI01001A","TWI01001B","TWI01002","TWI01003","TWI01003A","TWI01004","TWI01005","TWI01005A","TWI01005B","TWI01006","TWI01007","TWI01010B","TWI01010D","TWI01010F","TWI01010H","TWI01010J","TWI01010M","TWI01010N","TWI01010O","TWI01010S","TWI01010T","TWI01010U","TWI01010V","TWI01010X","TWI01010Y","TWI01011A","TWI01011B","TWI01011C","TWI01011D","TWI01011E","TWI01012","TWI01013","TWI01014","TWI01015","TWI01016","TWI01016A","TWI01016B","TWI01017","TWI01018","TWI01019","TWI01020","TWI01021","TWI01022","TWI01023","TWI01023A",
+      "TWI02001A","TWI02001B","TWI02001C","TWI02001D","TWI02001E","TWI02001F","TWI02001G","TWI02001H","TWI02001I",
+      "TWI02002","TWI02003","TWI02003A","TWI02003B","TWI02004","TWI02004A","TWI02005","TWI02005A","TWI02005B","TWI02005C",
+      "TWI02006","TWI02006A","TWI02006B","TWI02006C","TWI02007","TWI02007a","TWI02007B","TWI02007C","TWI02007D","TWI02007E","TWI02007F","TWI02007G","TWI02007H","TWI02007I","TWI02007J","TWI02007K","TWI02007M","TWI02007N","TWI02007O","TWI02007P","TWI02007Q","TWI02007R","TWI02007S","TWI02007T","TWI02007U","TWI02007V","TWI02007W","TWI02007X","TWI02007Y","TWI02007Z",
+      "TWI02008","TWI02008A","TWI02008B","TWI02008C","TWI02008D","TWI02008E","TWI02008F","TWI02008G","TWI02008H","TWI02008I","TWI02008J","TWI02008K","TWI02008L","TWI02008M","TWI02008N","TWI02008O","TWI02008P","TWI02008Q","TWI02008R","TWI02008S",
+      "TWI02009","TWI02009A","TWI02009B","TWI02009C","TWI02009D","TWI02009E","TWI02009F","TWI02009G","TWI02009H","TWI02009I","TWI02009J","TWI02009K","TWI02009L","TWI02009M",
+      "TWI02010","TWI02010A","TWI02010B","TWI02010C","TWI02010D","TWI02010E","TWI02011","TWI02012","TWI02012A",
+      "TWI02013A","TWI02013B","TWI02013C","TWI02013D","TWI02013E","TWI02014A","TWI02015A","TWI02016","TWI02017","TWI02018","TWI02019","TWI02020",
+      "TWI03001","TWI03002","TWI04001","TWI05001","TWI05002","TWI05003","TWI05004","TWI05005",
+      "TWI07001","TWI07002","TWI07003","TWI07004","TWI07004A","TWI07005","TWI07006","TWI07007","TWI07007A","TWI07008","TWI07009","TWI07010","TWI07010A","TWI07011","TWI07011A","TWI07012","TWI07012A","TWI07013","TWI07014","TWI07015","TWI07016","TWI07017","TWI07018","TWI07019","TWI07020","TWI07021","TWI07022","TWI07023","TWI07024","TWI07025","TWI07026","TWI07027","TWI07028",
+      "TWI08001","TWI08001A","TWI08001B","TWI08001C","TWI08002","TWI08002A","TWI08002B","TWI08002C","TWI08003","TWI08003A","TWI08003B","TWI08004","TWI08004A","TWI08004B","TWI08004C","TWI08005","TWI08006","TWI08007","TWI08008","TWI08009","TWI08010","TWI08011","TWI08012","TWI08013","TWI08014","TWI08015","TWI08016","TWI08017","TWI08018","TWI08019","TWI08020","TWI08021","TWI08021A","TWI08022","TWI08022A","TWI08023","TWI08023A","TWI08024","TWI08025","TWI08026","TWI08027","TWI08027A","TWI08028",
+      "TWI09001","TWI10001","TWI11001","TWI12001","TWI13001","TWI13002","TWI14001","TWI15001","TWI15002","TWI15003","TWI15004",
+      "TWI16001","TWI17001","TWI17002","TWI17003","TWI18001","TWI19001","TWI20001","TWI20002","TWI20003","TWI21001",
+      "TWI22001","TWI22002","TWI22003","TWI22004","TWI22005","TWI22006","TWI22007","TWI23001",
+      "UAS001","UAS002",
+      "WAHI002","WAHI003","WAHI004","WAHI005","WAHI006","WAHI007","WAHI008","WAHI009","WAHI010","WAHI011","WAHI012","WAHI013","WAHI014","WAHI015","WAHI016","WAHI017","WAHI018","WAHI019","WAHI020",
+      "WDM001","WDM002","WER001","WER002","WER003","WER004","WER005","WER006","WER007","WER008","WER009","WER010","WER011","WER012","WER013","WER014","WER015","WER016","WER017","WER018","WER019","WER020","WER021","WER022","WER023","WER024","WER025","WER026","WER027","WER028","WER029","WER030","WER031","WER032","WER033",
+      "WHN001","WKM001",
+      "WLR001","WLR002","WLR003","WLR004","WLR005","WLR006","WLR007","WLR008","WLR009","WLR010","WLR011","WLR012","WLR013","WLR014","WLR015","WLR016","WLR017","WLR018","WLR019","WLR020","WLR021","WLR022","WLR023","WLR024","WLR025","WLR026","WLR027","WLR028","WLR029","WLR030","WLR031","WLR032","WLR033","WLR034","WLR035","WLR036","WLR037","WLR038","WLR039","WLR040","WLR041","WLR042","WLR043","WLR044","WLR045","WLR046","WLR047","WLR048","WLR049","WLR050","WLR051","WLR052","WLR053","WLR054","WLR055","WLR056","WLR057","WLR058","WLR059","WLR060","WLR061","WLR062","WLR063","WLR064","WLR065","WLR066",
+      "WOI001","WOI002","WOI003","WRA001",
+      "XIN001","XIN002","XIN003","XIN004",
+      "XLO001","XLO002","XLO003","XLO004","XLO005","XLO006","XLO007","XLO008","XLO009","XLO010","XLO011","XLO012","XLO013","XLO014","XLO015","XLO016","XLO017","XLO018","XLO020","XLO021","XLO022","XLO023","XLO024","XLO025","XLO026","XLO027","XLO028","XLO029",
+      "YDI001","YDI002","YDI003","YDI004","YKN001","YKN002","YMI001","YMI002","YMI003","YMI004",
+      "ZAP001","ZAP002","ZAP003","ZAP004","ZAP005","ZAP006","9999C","9999E"
+    ];
+
+    let customFGCodes = [];
+    let customComponents = [];
+
+    // ===== COMPONENT LIST =====
+    const COMPONENTS = [
+      "RSC", "TOP", "TOP & BOTTOM", "SLEEVE 1", "SLEEVE 2", "BASE PAD", "BLOCK RUNNER", "BOTTOM",
+      "BUFFER", "BUFFER 1", "BUFFER 2", "BUFFER 3", "BUFFER 4", "BUFFER 5", "GSU", "HCB",
+      "LAYER", "LAYER 1", "LAYER 2", "LAYER 3", "LAYER 4", "LAYER 5", "PAPER ANGLE", "PARTISI",
+      "PARTISI 1", "PARTISI 2", "PARTISI 3", "PARTISI 4", "PARTISI 5", "REINFORCEMENT",
+      "REINFORCEMENT 1", "REINFORCEMENT 2", "REINFORCEMENT 3", "REINFORCEMENT 4", "REINFORCEMENT 5",
+      "RUNNER", "UNDER DECK"
+    ];
+
+    function filterComponentList() {
+      const input = document.getElementById('nama_komponen');
+      const searchValue = input.value.toUpperCase().trim();
+      const dropdown = document.getElementById('component-dropdown');
+      const componentList = document.getElementById('component-list');
+
+      if (searchValue === '') {
+        dropdown.classList.add('hidden');
+        return;
+      }
+
+      const allComponents = [...COMPONENTS, ...customComponents];
+      const filtered = allComponents.filter(comp => 
+        comp.includes(searchValue) && !allComponents.slice(0, allComponents.indexOf(comp)).includes(comp)
+      );
+
+      const exactMatch = filtered.some(comp => comp === searchValue);
+
+      if (filtered.length === 0) {
+        componentList.innerHTML = '<div class="px-3 py-2 text-sm text-slate-500">Komponen tidak ditemukan</div>';
+        const addNewBtn = document.createElement('button');
+        addNewBtn.type = 'button';
+        addNewBtn.className = 'w-full px-3 py-2 text-sm text-blue-600 font-medium hover:bg-blue-50 border-t border-slate-200';
+        addNewBtn.textContent = '➕ Tambah Komponen Baru';
+        addNewBtn.onclick = () => addNewComponent();
+        componentList.appendChild(addNewBtn);
+      } else {
+        let html = filtered.map(comp => `
+          <button type="button" class="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 border-b border-slate-100 last:border-b-0" onclick="selectComponent('${comp}')">
+            ${comp}
+          </button>
+        `).join('');
+        
+        if (!exactMatch) {
+          html += `
+            <button type="button" class="w-full px-3 py-2 text-sm text-blue-600 font-medium hover:bg-blue-50 border-t border-slate-200" onclick="addNewComponent()">
+              ➕ Tambah Komponen Baru
+            </button>
+          `;
+        }
+        
+        componentList.innerHTML = html;
+      }
+
+      dropdown.classList.remove('hidden');
+    }
+
+    function selectComponent(comp) {
+      document.getElementById('nama_komponen').value = comp;
+      document.getElementById('component-dropdown').classList.add('hidden');
+    }
+
+    async function addNewComponent() {
+      const input = document.getElementById('nama_komponen');
+      const newComponent = input.value.toUpperCase().trim();
+      
+      if (!newComponent) {
+        showToast('Masukkan nama komponen terlebih dahulu', 'error');
+        return;
+      }
+
+      if (COMPONENTS.includes(newComponent) || customComponents.includes(newComponent)) {
+        showToast(`Komponen ${newComponent} sudah ada dalam daftar`, 'error');
+        return;
+      }
+
+      customComponents.push(newComponent);
+      document.getElementById('component-dropdown').classList.add('hidden');
+      showToast(`✓ Komponen ${newComponent} berhasil ditambahkan!`, 'success');
+      input.value = newComponent;
+    }
+
+    document.addEventListener('click', function(e) {
+      const input = document.getElementById('nama_komponen');
+      const dropdown = document.getElementById('component-dropdown');
+      if (input && dropdown && !input.parentElement.contains(e.target)) {
+        dropdown.classList.add('hidden');
+      }
+    });
+
+    function filterFGList() {
+      const input = document.getElementById('kode_item_fg');
+      const searchValue = input.value.toUpperCase().trim();
+      const dropdown = document.getElementById('fg-dropdown');
+      const fgList = document.getElementById('fg-list');
+      const addNewBtn = document.getElementById('fg-add-new');
+
+      if (searchValue === '') {
+        dropdown.classList.add('hidden');
+        return;
+      }
+
+      const allCodes = [...FG_CODES, ...customFGCodes];
+      const filtered = allCodes.filter(code => 
+        code.includes(searchValue) && !allCodes.slice(0, allCodes.indexOf(code)).includes(code)
+      );
+
+      const exactMatch = filtered.some(code => code === searchValue);
+
+      if (filtered.length === 0) {
+        fgList.innerHTML = '<div class="px-3 py-2 text-sm text-slate-500">Kode tidak ditemukan</div>';
+        addNewBtn.classList.remove('hidden');
+      } else {
+        fgList.innerHTML = filtered.map(code => `
+          <button type="button" class="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 border-b border-slate-100 last:border-b-0" onclick="selectFGCode('${code}')">
+            ${code}
+          </button>
+        `).join('');
+        addNewBtn.classList.add('hidden');
+      }
+
+      dropdown.classList.remove('hidden');
+    }
+
+    function selectFGCode(code) {
+      document.getElementById('kode_item_fg').value = code;
+      document.getElementById('fg-dropdown').classList.add('hidden');
+    }
+
+    async function addNewFGCode() {
+      const input = document.getElementById('kode_item_fg');
+      const newCode = input.value.toUpperCase().trim();
+      
+      if (!newCode) {
+        showToast('Masukkan kode item terlebih dahulu', 'error');
+        return;
+      }
+
+      if (FG_CODES.includes(newCode) || customFGCodes.includes(newCode)) {
+        showToast(`Kode ${newCode} sudah ada dalam daftar`, 'error');
+        return;
+      }
+
+      customFGCodes.push(newCode);
+      document.getElementById('fg-dropdown').classList.add('hidden');
+      showToast(`✓ Kode ${newCode} berhasil ditambahkan!`, 'success');
+      input.value = newCode;
+    }
+
+    document.addEventListener('click', function(e) {
+      const input = document.getElementById('kode_item_fg');
+      const dropdown = document.getElementById('fg-dropdown');
+      if (input && dropdown && !input.parentElement.contains(e.target)) {
+        dropdown.classList.add('hidden');
+      }
+    });
+
+    // ===== DATA DEFINITIONS =====
+    const LEADERS = [
+      "SATRIA ACHMAD BAGJA",
+      "AHMAD SYAYUDI",
+      "MOCH NADZIYATU FARIDZA",
+      "SEPTIAN AJI LESMONO",
+      "MUSTAKIM"
+    ];
+
+    const WORK_STATIONS = [
+      "WS1.1. PANEL SAW",
+      "WS1.2. SLITTER",
+      "WS1.3. GANG RIP",
+      "WS1.4. ARM SAW",
+      "WS2.1. UP DOWN",
+      "WS2.2. CRUSHER",
+      "WS2.3. TEKUK",
+      "WS2.4. JIG SAW",
+      "WS2.5. DEICUT ROLL",
+      "WS2.6. DEICUT POND",
+      "WS2.7. ECCENTRIC",
+      "WS3.1. TABLE STICHING",
+      "WS3.2. ARM STICHING",
+      "WS4.1. GLUE & HOIS PRESS",
+      "WS4.2. GLUE JOINT",
+      "WS4.3. CUTTER MANUAL",
+      "WS4.4. ASSEMBLING",
+      "WS5.1. PRINTING FLEXO",
+      "WS5.2. PRINTING MANUAL",
+      "WS6.1. PACKING",
+      "WH.1. WAREHOUSE",
+      "QC.1. QUALITY CONTROL"
+    ];
+
+    const OPERATORS = [
+      "MUSTAKIM",
+      "SATRIA ACHMAD BAGJA",
+      "AHMAD SYAYUDI",
+      "HERI IRAWAN",
+      "ZERRI BAGUS SETIAWAN",
+      "M. LUKMANUL AFIF",
+      "EDI PURNOMO",
+      "RIAN DWIKI CAHYA FITRA",
+      "DWI CAHYO WAHYU WIBOWO",
+      "ARIS SETIOAJI",
+      "AHMAD ASRORI",
+      "DIDIN PRAYONO",
+      "ACHMAD FATICHUL AZIZ",
+      "NUR QOMARI SALIM",
+      "DIKA SUGIANTO",
+      "ZHIDANE ANDIKA SETIANTORO",
+      "VIKI SRI HENDRA ARDANA",
+      "NANDA DWI KURNIAWAN",
+      "MUHAMMAD FERI KURNIAWAN",
+      "AHMAD NAFIK",
+      "SALSA BELLA FITRI NUR AZIZAH",
+      "LINDA ARIANTI",
+      "LILIK ISTIQOMAH",
+      "ROSSYID HIDAYATUL MUZZAINI",
+      "MUHAMMAD FAISAL",
+      "AKSIN KHALID ATTARIQ",
+      "M FURQON CHAQIQ",
+      "M. SULTHON HAFIDH ALAFGHONI",
+      "ERIK FEBRIANTO",
+      "NANDA HARISMAWATI",
+      "MUAZHAR REZA FAIDHIN",
+      "ZUNI AYU TIYAS SAFITRI",
+      "FATMA RODIYAH",
+      "DWI ANTO AJI PAMASA",
+      "ADINDA OKTAVIA S (Magang)",
+      "FITROTUL MAGFIROH (Magang)",
+      "M AKBAR HAMDANI (Magang)",
+      "MIFTAH MAULANA IRSYAD (Magang)",
+      "M ANDRE FAHREZA (Magang)",
+      "RIDHO FIRMANSYAH (Magang)",
+      "ACH RAINDHA RISKY ARDANSYAH (Magang)",
+      "KEVIN ARDIANSYAH MUSTOFA (Magang)",
+      "MUHAMMAD KENZA SYEHFUDIN (Magang)",
+      "JELITA LAUREN M (Magang)",
+      "SAMUEL TEGAR (Magang)",
+      "ISNA (Magang)"
+    ];
+
+    const NG_CRITERIA = [
+      "D1. Salah material",
+      "D2. Warping / Melengkung",
+      "D3. Delaminasi",
+      "D4. Rusak setting",
+      "D5. Surface kotor",
+      "D6. Surface berkerut",
+      "D7. Sobek",
+      "D8. Salah ukuran",
+      "D9. Banana cut (Jajar genjang)",
+      "D10. Potongan kasar",
+      "D11. Salah creasing",
+      "D12. Creasing kurang dalam",
+      "D13. Creasing tidak lurus",
+      "D14. Creasing pecah",
+      "D15. Salah coak",
+      "D16. Coak miring / meleset",
+      "D17. Stiching tidak rapi",
+      "D18. Salah assembling",
+      "D19. Joint kurang presisi",
+      "D20. Salah printing",
+      "D21. Warna printing kurang solid",
+      "D22. Printing geser",
+      "D23. Printing kurang rapi",
+      "D24. Edge Crushed / rusak tepi",
+      "D25. Die-Crush / rusak surface"
+    ];
+
+    const DOWNTIME_CRITERIA = [
+      "A1. Proses tidak sesuai dengan Instruksi kerja",
+      "A2. Berhentinya proses produksi karena faktor internal produksi",
+      "A3. Target 100% qty tidak tercapai",
+      "A4. Jumlah rework / NG diatas 0,5%",
+      "A5. Melanggar prinsip 3J",
+      "B1. Suplay bahan baku terlambat karena belum terdistribusi ke produksi",
+      "B2. Quantity Suplay bahan baku kurang (tidak sesuai dengan BOM)",
+      "B3. Material yang terdistribusi tidak sesuai dengan spesifikasi (salah kirim tidak sesuai dengan BOM)",
+      "C1. Kualitas bahan baku yang terdistribusi tidak memenuhi standart kualitas",
+      "C2. Pemakaian bahan baku yang sudah ekspired tanpa adanya rekomendasi",
+      "D1. Trouble pada mechanical mesin menyebabkan mesin off",
+      "D2. Trouble pada electrical mesin menyebabkan mesin off",
+      "D3. Trouble pada software mesin menyebabkan mesin off",
+      "D4. Keterbatasan fungsi mesin yang berakibat menurunnya kapasitas mesin",
+      "D5. Keterbatasan tooling yang menyebabkan proses berhenti",
+      "E1. Kesalahan gambar kerja / Technical drawing (TD)",
+      "E2. Kesalahan Equipment",
+      "E3. Kesalahan Flow proses",
+      "E4. Kesalahan master Bill Off Material (BOM)",
+      "E5. Gambar kerja / Technical drawing (TD) yang tidak jelas",
+      "E6. Keterlambatan distribusi Technical drawing (TD) / Equipment",
+      "E7. Revisi gambar kerja setelah close jadwal",
+      "F1. Target yang di bebankan tidak sesuai dengan realisasi",
+      "F2. Kapasitas yang di bebankan melebihi kapasitas yang terpasang",
+      "F3. Kekurangan / keterlambatan material dari pihak Eksternal (Vendor)",
+      "F4. Mis planning (keterlambatan / kesalahan Instruksi kerja harian)",
+      "G1. Pemenuhan jumlah kebutuhan personil tidak sesuai dengan rekomendasi ppic",
+      "G2. Pemadaman listrik dari PLN tanpa ada konfirmasi terlebih dahulu (Minimal H-2)",
+      "G3. Berhentinya proses produksi karena faktor cuaca / kondisi keamanan"
+    ];
+
+    // ===== STATE =====
+    let isAnnouncementAdmin = false;
+    const OWNER_PASSWORD = "triwall2024";
+
+    let allReports = [];
+    let announcement = null;
+    let ngItemCounter = 0;
+
+    const timers = {
+      prep: { start: null, end: null, duration: 0, running: false },
+      process: { start: null, end: null, duration: 0, running: false },
+      downtime: { start: null, end: null, duration: 0, running: false }
+    };
+
+    let downtimeItems = [];
+    let downtimeItemCounter = 0;
+
+    let pendingReportData = null;
+
+    const defaultConfig = {
+      app_title: "📋 Laporan Hasil Kerja Harian (LHKH)",
+      company_name: "PT. TRI-Wall Natura Surabaya"
+    };
+
+    // ===== INITIALIZATION =====
+    function initializeSelects() {
+      populateSelect('nama_leader', LEADERS);
+      populateSelect('work_station', WORK_STATIONS);
+      populateSelect('nama_operator', OPERATORS);
+      populateSelect('helper_1', OPERATORS, true);
+      populateSelect('helper_2', OPERATORS, true);
+      populateSelect('helper_3', OPERATORS, true);
+      
+      function setTodayDate() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('tanggal_kerja').value = today;
+      }
+      
+      setTodayDate();
+      setInterval(setTodayDate, 60000);
+    }
+
+    function populateSelect(id, options, optional = false) {
+      const select = document.getElementById(id);
+      if (!select) return;
+      
+      const firstOption = select.querySelector('option');
+      select.innerHTML = '';
+      if (firstOption) select.appendChild(firstOption);
+      
+      if (optional) {
+        const emptyOpt = document.createElement('option');
+        emptyOpt.value = '';
+        emptyOpt.textContent = '-- Tidak Ada --';
+        select.appendChild(emptyOpt);
+      }
+      
+      options.forEach(opt => {
+        const option = document.createElement('option');
+        option.value = opt;
+        option.textContent = opt;
+        select.appendChild(option);
+      });
+    }
+
+    // ===== TAB NAVIGATION =====
+    function showTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(el => {
+        el.classList.remove('bg-blue-600', 'text-white');
+        el.classList.add('bg-white', 'text-slate-600');
+      });
+      
+      document.getElementById(`content-${tabName}`).classList.remove('hidden');
+      const activeTab = document.getElementById(`tab-${tabName}`);
+      activeTab.classList.remove('bg-white', 'text-slate-600');
+      activeTab.classList.add('bg-blue-600', 'text-white');
+    }
+
+    // ===== TOAST NOTIFICATIONS =====
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const bgColor = type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-amber-500';
+      toast.className = `toast ${bgColor} text-white px-4 py-3 rounded-lg shadow-lg text-sm font-medium`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    // ===== CLEAR ZERO VALUE =====
+    function clearZeroValue(input) {
+      if (input.value === '0') {
+        input.value = '';
+      }
+    }
+
+    // ===== NG/DEFECT HANDLING =====
+    function toggleNGSection() {
+      const ngValue = parseInt(document.getElementById('total_output_ng').value) || 0;
+      const ngSection = document.getElementById('ng-section');
+      
+      if (ngValue > 0) {
+        ngSection.classList.remove('hidden');
+        document.getElementById('ng-target').textContent = ngValue;
+        if (document.querySelectorAll('.ng-item').length === 0) {
+          addNGItem();
+        }
+      } else {
+        ngSection.classList.add('hidden');
+        document.getElementById('ng-items-container').innerHTML = '';
+        ngItemCounter = 0;
+      }
+    }
+
+    function addNGItem() {
+      ngItemCounter++;
+      const container = document.getElementById('ng-items-container');
+      const item = document.createElement('div');
+      item.className = 'ng-item p-3 bg-white rounded-lg border border-red-200';
+      item.id = `ng-item-${ngItemCounter}`;
+      
+      let optionsHtml = '<option value="">-- Pilih Kriteria --</option>';
+      NG_CRITERIA.forEach(criteria => {
+        optionsHtml += `<option value="${criteria}">${criteria}</option>`;
+      });
+      
+      item.innerHTML = `
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-semibold text-red-700">Kriteria NG #${ngItemCounter}</span>
+          <button type="button" onclick="removeNGItem(${ngItemCounter})" class="text-red-500 hover:text-red-700 text-sm">✕</button>
+        </div>
+        <div class="space-y-2">
+          <select class="ng-kriteria w-full px-2 py-2 border border-red-200 rounded text-xs bg-white" onchange="updateNGTotal()">
+            ${optionsHtml}
+          </select>
+          <input type="number" class="ng-qty w-full px-2 py-2 border border-red-200 rounded text-xs" placeholder="Qty (Pcs)" min="0" onchange="updateNGTotal()">
+          <div class="text-xs text-red-600">📷 Foto dokumentasi (opsional)</div>
+          <input type="file" accept="image/*" class="ng-photo w-full text-xs" capture="environment">
+        </div>
+      `;
+      
+      container.appendChild(item);
+    }
+
+    function removeNGItem(id) {
+      const item = document.getElementById(`ng-item-${id}`);
+      if (item) {
+        item.remove();
+        updateNGTotal();
+      }
+    }
+
+    function updateNGTotal() {
+      const items = document.querySelectorAll('.ng-item');
+      let total = 0;
+      items.forEach(item => {
+        const qty = parseInt(item.querySelector('.ng-qty').value) || 0;
+        total += qty;
+      });
+      document.getElementById('ng-total-sum').textContent = total;
+    }
+
+    async function collectNGDetails() {
+      const items = document.querySelectorAll('.ng-item');
+      const ngData = {};
+      let counter = 1;
+      
+      for (const item of items) {
+        const kriteria = item.querySelector('.ng-kriteria').value;
+        const qty = parseInt(item.querySelector('.ng-qty').value) || 0;
+        
+        if (kriteria && qty > 0) {
+          ngData[`ng_kriteria_${counter}`] = kriteria;
+          ngData[`ng_qty_${counter}`] = qty;
+          ngData[`ng_foto_${counter}`] = '';
+          counter++;
+        }
+      }
+      
+      return ngData;
+    }
+
+    // ===== TIMER FUNCTIONS =====
+    function formatTime(date) {
+      if (!date) return '--:--:--';
+      return date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    function startTimer(type) {
+      const timer = timers[type];
+      timer.start = new Date();
+      timer.running = true;
+      timer.end = null;
+      timer.duration = 0;
+      
+      document.getElementById(`btn-${type}-start`).disabled = true;
+      document.getElementById(`btn-${type}-end`).disabled = false;
+      document.getElementById(`${type}-start-display`).textContent = formatTime(timer.start);
+      document.getElementById(`${type}-end-display`).textContent = '--:--:--';
+      document.getElementById(`${type}-duration-display`).textContent = '⏱️ Berjalan...';
+      
+      showToast(`Timer ${type === 'prep' ? 'Preparation' : type === 'process' ? 'Proses' : 'Down Time'} dimulai`, 'success');
+    }
+
+    function formatDuration(seconds) {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    function convertToDecimalHours(seconds) {
+      const decimalHours = seconds / 3600;
+      return Math.round(decimalHours * 100) / 100;
+    }
+
+    function endTimer(type) {
+      const timer = timers[type];
+      timer.end = new Date();
+      timer.running = false;
+      timer.duration = Math.round((timer.end - timer.start) / 1000);
+      
+      document.getElementById(`btn-${type}-start`).disabled = false;
+      document.getElementById(`btn-${type}-end`).disabled = true;
+      document.getElementById(`${type}-end-display`).textContent = formatTime(timer.end);
+      document.getElementById(`${type}-duration-display`).textContent = formatDuration(timer.duration);
+      
+      if (type === 'downtime') {
+        const downtimeSection = document.getElementById('downtime-section');
+        downtimeSection.classList.remove('hidden');
+        if (document.querySelectorAll('.downtime-item').length === 0) {
+          addDowntimeItem();
+        }
+      }
+      
+      showToast(`Timer selesai: ${formatDuration(timer.duration)}`, 'success');
+    }
+
+    function addDowntimeItem() {
+      downtimeItemCounter++;
+      const container = document.getElementById('downtime-items-container');
+      const item = document.createElement('div');
+      item.className = 'downtime-item p-3 bg-red-50 rounded-lg border border-red-200';
+      item.id = `downtime-item-${downtimeItemCounter}`;
+      
+      let criteriaHtml = '<option value="">-- Pilih Kriteria --</option>';
+      DOWNTIME_CRITERIA.forEach(criteria => {
+        criteriaHtml += `<option value="${criteria}">${criteria}</option>`;
+      });
+      
+      let wsHtml = '<option value="">-- Pilih Work Station --</option>';
+      WORK_STATIONS.forEach(ws => {
+        wsHtml += `<option value="${ws}">${ws}</option>`;
+      });
+      
+      let opHtml = '<option value="">-- Pilih Operator --</option>';
+      OPERATORS.forEach(op => {
+        opHtml += `<option value="${op}">${op}</option>`;
+      });
+      
+      item.innerHTML = `
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-semibold text-red-700">Downtime #${downtimeItemCounter}</span>
+          <button type="button" onclick="removeDowntimeItem(${downtimeItemCounter})" class="text-red-500 hover:text-red-700 text-sm">✕</button>
+        </div>
+        <div class="space-y-2">
+          <div>
+            <label class="text-xs font-medium text-red-700 block mb-1">Kriteria Down Time <span class="text-red-500">*</span></label>
+            <select class="downtime-kriteria w-full px-2 py-2 border border-red-200 rounded text-xs bg-white">
+              ${criteriaHtml}
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-red-700 block mb-1">Work Station Penyebab <span class="text-red-500">*</span></label>
+            <select class="downtime-workstation w-full px-2 py-2 border border-red-200 rounded text-xs bg-white">
+              ${wsHtml}
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-red-700 block mb-1">Nama Operator Penyebab <span class="text-red-500">*</span></label>
+            <select class="downtime-operator w-full px-2 py-2 border border-red-200 rounded text-xs bg-white">
+              ${opHtml}
+            </select>
+          </div>
+        </div>
+      `;
+      
+      container.appendChild(item);
+    }
+
+    function removeDowntimeItem(id) {
+      const item = document.getElementById(`downtime-item-${id}`);
+      if (item) {
+        item.remove();
+      }
+    }
+
+    function collectDowntimeDetails() {
+      const items = document.querySelectorAll('.downtime-item');
+      const details = {};
+      
+      if (items.length > 0) {
+        const firstItem = items[0];
+        details.downtime_kriteria = firstItem.querySelector('.downtime-kriteria').value || '';
+        details.downtime_workstation = firstItem.querySelector('.downtime-workstation').value || '';
+        details.downtime_operator = firstItem.querySelector('.downtime-operator').value || '';
+      }
+      
+      return details;
+    }
+
+    function updateCharCount() {
+      const textarea = document.getElementById('edit-announcement-text');
+      if (textarea) {
+        const count = textarea.value.length;
+        document.getElementById('char-count').textContent = `${count}/500 karakter`;
+      }
+    }
+
+    function openAnnouncementEditor() {
+      document.getElementById('announcement-modal').classList.remove('hidden');
+      document.getElementById('announcement-login-section').classList.remove('hidden');
+      document.getElementById('announcement-edit-section').classList.add('hidden');
+      document.getElementById('announcement-password').value = '';
+      document.getElementById('announcement-password').focus();
+    }
+
+    function closeAnnouncementEditor() {
+      document.getElementById('announcement-modal').classList.add('hidden');
+      document.getElementById('announcement-login-section').classList.remove('hidden');
+      document.getElementById('announcement-edit-section').classList.add('hidden');
+      document.getElementById('announcement-password').value = '';
+      isAnnouncementAdmin = false;
+    }
+
+    function loginAnnouncement() {
+      const password = document.getElementById('announcement-password').value;
+      if (password === OWNER_PASSWORD) {
+        isAnnouncementAdmin = true;
+        document.getElementById('announcement-login-section').classList.add('hidden');
+        document.getElementById('announcement-edit-section').classList.remove('hidden');
+        
+        if (announcement && announcement.announcement_text) {
+          document.getElementById('edit-announcement-text').value = announcement.announcement_text;
+          updateCharCount();
+        } else {
+          document.getElementById('edit-announcement-text').value = '';
+          updateCharCount();
+        }
+        
+        showToast('Login berhasil! Anda sekarang bisa edit pengumuman.', 'success');
+      } else {
+        showToast('Password salah!', 'error');
+      }
+    }
+
+    function logoutAnnouncement() {
+      isAnnouncementAdmin = false;
+      document.getElementById('announcement-login-section').classList.remove('hidden');
+      document.getElementById('announcement-edit-section').classList.add('hidden');
+      document.getElementById('announcement-password').value = '';
+      showToast('Anda telah logout', 'success');
+    }
+
+    async function saveAnnouncementText() {
+      if (!isAnnouncementAdmin) {
+        showToast('Anda tidak memiliki akses!', 'error');
+        return;
+      }
+
+      const text = document.getElementById('edit-announcement-text').value.trim();
+      
+      if (!text) {
+        showToast('Pengumuman tidak boleh kosong!', 'error');
+        return;
+      }
+
+      const btn = event.target;
+      const originalText = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="animate-spin">⏳</span> Menyimpan...';
+
+      const now = new Date().toISOString();
+
+      if (announcement && announcement.__backendId) {
+        const result = await window.dataSdk.update({
+          ...announcement,
+          announcement_text: text,
+          announcement_updated: now
+        });
+
+        if (result.isOk) {
+          showToast('✓ Pengumuman berhasil diperbarui!', 'success');
+          closeAnnouncementEditor();
+        } else {
+          showToast('Gagal menyimpan pengumuman', 'error');
+        }
+      } else {
+        const result = await window.dataSdk.create({
+          id: `announcement-${Date.now()}`,
+          type: 'announcement',
+          announcement_text: text,
+          announcement_updated: now,
+          tanggal_kerja: '',
+          jenis_jam_kerja: '',
+          shift_kerja: '',
+          nama_leader: '',
+          work_station: '',
+          nama_operator: '',
+          helper_1: '',
+          helper_2: '',
+          helper_3: '',
+          kode_item_fg: '',
+          nama_komponen: '',
+          total_output_ok: 0,
+          total_output_ng: 0,
+          ng_kriteria_1: '',
+          ng_qty_1: 0,
+          ng_foto_1: '',
+          ng_kriteria_2: '',
+          ng_qty_2: 0,
+          ng_foto_2: '',
+          ng_kriteria_3: '',
+          ng_qty_3: 0,
+          ng_foto_3: '',
+          ng_kriteria_4: '',
+          ng_qty_4: 0,
+          ng_foto_4: '',
+          ng_kriteria_5: '',
+          ng_qty_5: 0,
+          ng_foto_5: '',
+          prep_start: '',
+          prep_end: '',
+          prep_duration: 0,
+          process_start: '',
+          process_end: '',
+          process_duration: 0,
+          downtime_start: '',
+          downtime_end: '',
+          downtime_duration: 0,
+          downtime_kriteria: '',
+          downtime_workstation: '',
+          downtime_operator: '',
+          created_at: now
+        });
+
+        if (result.isOk) {
+          showToast('✓ Pengumuman berhasil disimpan!', 'success');
+          closeAnnouncementEditor();
+        } else {
+          showToast('Gagal menyimpan pengumuman', 'error');
+        }
+      }
+
+      btn.disabled = false;
+      btn.innerHTML = originalText;
+    }
+
+    function updateAnnouncementDisplay() {
+      const textEl = document.getElementById('announcement-text');
+      const timeEl = document.getElementById('announcement-time');
+      
+      const defaultMessage = 'Selamat datang di laporan LHKH TWNS! Silahkan lakukan check output terlebih dahulu, jika sudah sesuai lanjutkan untuk input kedalam sistem LHKH dengan jujur dan benar.';
+      
+      if (announcement && announcement.announcement_text && announcement.announcement_text.trim() !== '') {
+        textEl.textContent = announcement.announcement_text;
+        if (announcement.announcement_updated) {
+          const date = new Date(announcement.announcement_updated);
+          timeEl.textContent = `Diperbarui: ${date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
+        }
+      } else {
+        textEl.textContent = defaultMessage;
+        timeEl.textContent = '';
+      }
+    }
+
+    function updateArchiveDisplay() {
+      const wsSelect = document.getElementById('archive-filter-ws');
+      const wsOptions = new Set();
+      
+      allReports.forEach(report => {
+        if (report.work_station) {
+          wsOptions.add(report.work_station);
+        }
+      });
+
+      const currentValue = wsSelect.value;
+      const existingOptions = Array.from(wsSelect.querySelectorAll('option')).slice(1).map(o => o.value);
+      const newOptions = Array.from(wsOptions).sort();
+
+      if (JSON.stringify(existingOptions) !== JSON.stringify(newOptions)) {
+        const firstOption = wsSelect.querySelector('option');
+        wsSelect.innerHTML = '';
+        wsSelect.appendChild(firstOption);
+
+        newOptions.forEach(ws => {
+          const option = document.createElement('option');
+          option.value = ws;
+          option.textContent = ws;
+          wsSelect.appendChild(option);
+        });
+
+        if (currentValue && wsSelect.querySelector(`option[value="${currentValue}"]`)) {
+          wsSelect.value = currentValue;
+        }
+      }
+
+      filterArchivePhotos();
+    }
+
+    function filterArchivePhotos() {
+      const selectedDate = document.getElementById('archive-filter-date').value;
+      const selectedWS = document.getElementById('archive-filter-ws').value;
+      const archiveContent = document.getElementById('archive-content');
+
+      let filtered = allReports;
+
+      if (selectedDate) {
+        filtered = filtered.filter(r => r.tanggal_kerja === selectedDate);
+      }
+
+      if (selectedWS) {
+        filtered = filtered.filter(r => r.work_station === selectedWS);
+      }
+
+      if (filtered.length === 0) {
+        archiveContent.innerHTML = '<div class="text-center py-8 text-slate-500"><p class="text-sm">📷 Tidak ada dokumentasi foto untuk filter yang dipilih</p></div>';
+        return;
+      }
+
+      const groupedByDate = {};
+      filtered.forEach(report => {
+        const date = report.tanggal_kerja || 'Tanpa Tanggal';
+        if (!groupedByDate[date]) {
+          groupedByDate[date] = {};
+        }
+        const ws = report.work_station || 'Tanpa Work Station';
+        if (!groupedByDate[date][ws]) {
+          groupedByDate[date][ws] = [];
+        }
+        groupedByDate[date][ws].push(report);
+      });
+
+      const sortedDates = Object.keys(groupedByDate).sort().reverse();
+      let html = '';
+
+      sortedDates.forEach(date => {
+        const formattedDate = new Date(date + 'T00:00:00').toLocaleDateString('id-ID', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+
+        html += `
+          <div class="border-b border-slate-200 pb-4">
+            <h3 class="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
+              📅 ${formattedDate}
+            </h3>
+            <div class="space-y-4 ml-2">
+        `;
+
+        const sortedWS = Object.keys(groupedByDate[date]).sort();
+        sortedWS.forEach(ws => {
+          const reports = groupedByDate[date][ws];
+          html += `
+            <div class="pl-3 border-l-3 border-blue-300">
+              <p class="text-xs font-semibold text-blue-700 mb-2">🏭 ${ws}</p>
+              <div class="space-y-2">
+          `;
+
+          reports.forEach((report, idx) => {
+            const hasPhotos = [1, 2, 3, 4, 5].some(i => report[`ng_foto_${i}`] && report[`ng_foto_${i}`].trim());
+            
+            if (!hasPhotos) {
+              html += `
+                <div class="bg-slate-50 p-2 rounded text-xs text-slate-600">
+                  ℹ️ Laporan ${report.nama_operator} - Tanpa dokumentasi foto
+                </div>
+              `;
+              return;
+            }
+
+            html += `
+              <div class="bg-blue-50 p-3 rounded border border-blue-200">
+                <div class="flex items-start justify-between mb-2">
+                  <div>
+                    <p class="text-xs font-semibold text-blue-700">👨‍🔧 ${report.nama_operator}</p>
+                    <p class="text-xs text-blue-600">${report.kode_item_fg} - ${report.nama_komponen}</p>
+                    <p class="text-xs text-blue-500 mt-1">⏰ ${report.tanggal_kerja} | 📊 OK: ${report.total_output_ok} | NG: ${report.total_output_ng}</p>
+                  </div>
+                </div>
+                <div class="grid grid-cols-5 gap-2">
+            `;
+
+            [1, 2, 3, 4, 5].forEach(i => {
+              const criteria = report[`ng_kriteria_${i}`];
+              const qty = report[`ng_qty_${i}`];
+              const foto = report[`ng_foto_${i}`];
+
+              if (criteria && qty > 0) {
+                html += `
+                  <div class="bg-white p-2 rounded border border-blue-200 text-center">
+                    <p class="text-xs font-semibold text-slate-700 break-words">${criteria.substring(0, 15)}...</p>
+                    <p class="text-xs text-red-600 font-bold mt-1">Qty: ${qty}</p>
+                    <div class="mt-1 text-xs text-slate-500">
+                      ${foto && foto.trim() ? '✓ Foto ada' : '- Belum ada'}
+                    </div>
+                  </div>
+                `;
+              } else {
+                html += '<div class="bg-slate-100 p-2 rounded border border-slate-300 text-center"><p class="text-xs text-slate-400">-</p></div>';
+              }
+            });
+
+            html += `
+                </div>
+              </div>
+            `;
+          });
+
+          html += `
+              </div>
+            </div>
+          `;
+        });
+
+        html += `
+            </div>
+          </div>
+        `;
+      });
+
+      archiveContent.innerHTML = html;
+    }
+
+    const dataHandler = {
+      onDataChanged(data) {
+        allReports = data.filter(d => d.type === 'report');
+        announcement = data.find(d => d.type === 'announcement') || null;
+        updateAnnouncementDisplay();
+        updateArchiveDisplay();
+        
+        if (isAnnouncementAdmin && announcement) {
+          document.getElementById('edit-announcement-text').value = announcement.announcement_text || '';
+        }
+      }
+    };
+
+    async function handleSubmit(e) {
+      e.preventDefault();
+      
+      if (!timers.prep.start || !timers.prep.end) {
+        showToast('⚠️ Preparation & Setting: WAJIB tekan Start dan End!', 'error');
+        return;
+      }
+      
+      if (!timers.process.start || !timers.process.end) {
+        showToast('⚠️ Waktu Proses: WAJIB tekan Start dan End!', 'error');
+        return;
+      }
+      
+      if (timers.downtime.start && !timers.downtime.end) {
+        showToast('⚠️ Down Time: Jika Start ditekan, End juga harus ditekan!', 'error');
+        return;
+      }
+      
+      if ((timers.downtime.duration || 0) > 0) {
+        const downtimeItems = document.querySelectorAll('.downtime-item');
+        if (downtimeItems.length === 0) {
+          showToast('⚠️ Down Time: Minimal harus ada 1 kriteria downtime!', 'error');
+          return;
+        }
+        
+        let allValid = true;
+        downtimeItems.forEach(item => {
+          const kriteria = item.querySelector('.downtime-kriteria').value;
+          const ws = item.querySelector('.downtime-workstation').value;
+          const op = item.querySelector('.downtime-operator').value;
+          
+          if (!kriteria || !ws || !op) {
+            allValid = false;
+          }
+        });
+        
+        if (!allValid) {
+          showToast('⚠️ Down Time: Semua field (Kriteria, Work Station, Operator) wajib diisi!', 'error');
+          return;
+        }
+      }
+      
+      const totalNG = parseInt(document.getElementById('total_output_ng').value) || 0;
+      if (totalNG > 0) {
+        const ngSum = parseInt(document.getElementById('ng-total-sum').textContent) || 0;
+        if (ngSum !== totalNG) {
+          showToast(`Total NG harus sama: ${ngSum}/${totalNG}`, 'error');
+          return;
+        }
+      }
+      
+      if (allReports.length >= 998) {
+        showToast('Batas penyimpanan tercapai (999 data). Silakan hapus data lama.', 'error');
+        return;
+      }
+
+      const ngDetails = totalNG > 0 ? await collectNGDetails() : {};
+      const downtimeDetails = (timers.downtime.duration || 0) > 0 ? collectDowntimeDetails() : {};
+      
+      pendingReportData = {
+        id: `report-${Date.now()}`,
+        type: 'report',
+        tanggal_kerja: document.getElementById('tanggal_kerja').value,
+        jenis_jam_kerja: document.getElementById('jenis_jam_kerja').value,
+        shift_kerja: document.getElementById('shift_kerja').value,
+        nama_leader: document.getElementById('nama_leader').value,
+        work_station: document.getElementById('work_station').value,
+        nama_operator: document.getElementById('nama_operator').value,
+        helper_1: document.getElementById('helper_1').value || '',
+        helper_2: document.getElementById('helper_2').value || '',
+        helper_3: document.getElementById('helper_3').value || '',
+        kode_item_fg: document.getElementById('kode_item_fg').value,
+        nama_komponen: document.getElementById('nama_komponen').value,
+        total_output_ok: parseInt(document.getElementById('total_output_ok').value) || 0,
+        total_output_ng: totalNG,
+        ng_kriteria_1: ngDetails.ng_kriteria_1 || '',
+        ng_qty_1: ngDetails.ng_qty_1 || 0,
+        ng_foto_1: ngDetails.ng_foto_1 || '',
+        ng_kriteria_2: ngDetails.ng_kriteria_2 || '',
+        ng_qty_2: ngDetails.ng_qty_2 || 0,
+        ng_foto_2: ngDetails.ng_foto_2 || '',
+        ng_kriteria_3: ngDetails.ng_kriteria_3 || '',
+        ng_qty_3: ngDetails.ng_qty_3 || 0,
+        ng_foto_3: ngDetails.ng_foto_3 || '',
+        ng_kriteria_4: ngDetails.ng_kriteria_4 || '',
+        ng_qty_4: ngDetails.ng_qty_4 || 0,
+        ng_foto_4: ngDetails.ng_foto_4 || '',
+        ng_kriteria_5: ngDetails.ng_kriteria_5 || '',
+        ng_qty_5: ngDetails.ng_qty_5 || 0,
+        ng_foto_5: ngDetails.ng_foto_5 || '',
+        prep_start: timers.prep.start ? timers.prep.start.toISOString() : '',
+        prep_end: timers.prep.end ? timers.prep.end.toISOString() : '',
+        prep_duration: convertToDecimalHours(timers.prep.duration || 0),
+        process_start: timers.process.start ? timers.process.start.toISOString() : '',
+        process_end: timers.process.end ? timers.process.end.toISOString() : '',
+        process_duration: convertToDecimalHours(timers.process.duration || 0),
+        downtime_start: timers.downtime.start ? timers.downtime.start.toISOString() : '',
+        downtime_end: timers.downtime.end ? timers.downtime.end.toISOString() : '',
+        downtime_duration: convertToDecimalHours(timers.downtime.duration || 0),
+        downtime_kriteria: downtimeDetails.downtime_kriteria || '',
+        downtime_workstation: downtimeDetails.downtime_workstation || '',
+        downtime_operator: downtimeDetails.downtime_operator || '',
+        created_at: new Date().toISOString(),
+        announcement_text: '',
+        announcement_updated: ''
+      };
+
+      showConfirmationModal(pendingReportData);
+    }
+
+    function showConfirmationModal(reportData) {
+      const confirmContent = document.getElementById('confirmation-content');
+      
+      const confirmationHTML = `
+        <div class="space-y-2 text-xs">
+          <div class="grid grid-cols-2 gap-2">
+            <div class="bg-white p-2 rounded border border-slate-200">
+              <p class="text-slate-500 text-xs">📅 Tanggal</p>
+              <p class="font-semibold text-slate-800">${reportData.tanggal_kerja}</p>
+            </div>
+            <div class="bg-white p-2 rounded border border-slate-200">
+              <p class="text-slate-500 text-xs">⏰ Shift</p>
+              <p class="font-semibold text-slate-800">${reportData.shift_kerja}</p>
+            </div>
+          </div>
+          
+          <div class="bg-blue-50 p-2 rounded border border-blue-200">
+            <p class="text-blue-600 font-semibold text-xs">🏭 Work Station: ${reportData.work_station}</p>
+            <p class="text-blue-700">👨‍🔧 ${reportData.nama_operator}</p>
+          </div>
+          
+          <div class="bg-amber-50 p-2 rounded border border-amber-200">
+            <p class="text-amber-600 font-semibold text-xs">📦 ${reportData.kode_item_fg}</p>
+            <p class="text-amber-700">${reportData.nama_komponen}</p>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-2">
+            <div class="bg-green-50 p-2 rounded border border-green-200">
+              <p class="text-green-600 font-semibold">✓ ${reportData.total_output_ok}</p>
+              <p class="text-green-700 text-xs">Output OK</p>
+            </div>
+            <div class="bg-red-50 p-2 rounded border border-red-200">
+              <p class="text-red-600 font-semibold">✗ ${reportData.total_output_ng}</p>
+              <p class="text-red-700 text-xs">Output NG</p>
+            </div>
+          </div>
+          
+          <div class="bg-slate-100 p-2 rounded text-slate-700 text-xs space-y-1">
+            <p>⏱️ Prep: ${formatDuration(reportData.prep_duration * 3600)}</p>
+            <p>⚙️ Proses: ${formatDuration(reportData.process_duration * 3600)}</p>
+            <p>🛑 Downtime: ${formatDuration(reportData.downtime_duration * 3600)}</p>
+          </div>
+        </div>
+      `;
+      
+      confirmContent.innerHTML = confirmationHTML;
+      document.getElementById('confirmation-modal').classList.remove('hidden');
+    }
+
+    let isSubmitting = false;
+
+    async function confirmSubmit() {
+      if (!pendingReportData || isSubmitting) return;
+      
+      isSubmitting = true;
+      const modal = document.getElementById('confirmation-modal');
+      const btn = document.querySelector('#confirmation-modal button:first-of-type');
+      const originalText = btn.innerHTML;
+      
+      btn.disabled = true;
+      btn.innerHTML = '<span class="animate-spin">⏳</span> Menyimpan...';
+      
+      try {
+        if (!window.dataSdk) {
+          showToast('⚠️ Data SDK tidak tersedia', 'error');
+          throw new Error('Data SDK not available');
+        }
+
+        const result = await window.dataSdk.create(pendingReportData);
+        
+        if (result.isOk) {
+          showToast('✓ Laporan berhasil disimpan ke Canva Sheet!', 'success');
+          modal.classList.add('hidden');
+          resetForm();
+          pendingReportData = null;
+          
+          setTimeout(() => {
+            document.getElementById('jenis_jam_kerja').focus();
+          }, 500);
+        } else {
+          showToast(`Gagal menyimpan: ${result.error?.message || 'Error tidak diketahui'}`, 'error');
+        }
+      } catch (error) {
+        console.error('Error during submission:', error);
+        showToast(`Gagal menyimpan laporan: ${error.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+        isSubmitting = false;
+      }
+    }
+
+    function cancelConfirmation() {
+      document.getElementById('confirmation-modal').classList.add('hidden');
+      pendingReportData = null;
+    }
+
+    function resetForm() {
+      document.getElementById('report-form').reset();
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('tanggal_kerja').value = today;
+      
+      ['prep', 'process', 'downtime'].forEach(type => {
+        timers[type] = { start: null, end: null, duration: 0, running: false };
+        document.getElementById(`${type}-start-display`).textContent = '--:--:--';
+        document.getElementById(`${type}-end-display`).textContent = '--:--:--';
+        document.getElementById(`${type}-duration-display`).textContent = '00:00:00';
+        document.getElementById(`btn-${type}-start`).disabled = false;
+        document.getElementById(`btn-${type}-end`).disabled = true;
+      });
+      
+      document.getElementById('ng-section').classList.add('hidden');
+      document.getElementById('ng-items-container').innerHTML = '';
+      ngItemCounter = 0;
+      
+      document.getElementById('downtime-section').classList.add('hidden');
+      document.getElementById('downtime-items-container').innerHTML = '';
+      downtimeItemCounter = 0;
+    }
+
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange: async (config) => {
+          document.getElementById('main-title').textContent = config.app_title || defaultConfig.app_title;
+          document.getElementById('company-title').textContent = config.company_name || defaultConfig.company_name;
+        },
+        mapToCapabilities: (config) => ({
+          recolorables: [],
+          borderables: [],
+          fontEditable: undefined,
+          fontSizeable: undefined
+        }),
+        mapToEditPanelValues: (config) => new Map([
+          ['app_title', config.app_title || defaultConfig.app_title],
+          ['company_name', config.company_name || defaultConfig.company_name]
+        ])
+      });
+    }
+
+    async function init() {
+      initializeSelects();
+      
+      if (window.dataSdk) {
+        const result = await window.dataSdk.init(dataHandler);
+        if (!result.isOk) {
+          console.error('Failed to initialize Data SDK');
+        }
+      }
+    }
+
+    init();
+  </script>
+   </main>
+  </div>
+ <script>
+// Contoh logika pengiriman
+const scriptURL = 'https://script.google.com/macros/s/AKfycbxwr1NJRYU5KEa3bOE0vKcQPRtz9maCPRhdEV0471K92Azug4FKu6bNjAEhqFbKFZlA/exec';
+const form = document.getElementById('lhkh-form');
+
+document.getElementById('confirm-submit-btn').addEventListener('click', e => {
+  e.preventDefault();
+  
+  // Tampilkan loading jika perlu
+  
+  fetch(scriptURL, { 
+    method: 'POST', 
+    body: new FormData(form)
+  })
+  .then(response => {
+    alert("Data Berhasil Terkirim ke Spreadsheet!");
+    location.reload(); // Segarkan halaman
+  })
+  .catch(error => {
+    console.error('Error!', error.message);
+    alert("Gagal mengirim data.");
+  });
+});
+
+(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d972b2605adce4d',t:'MTc3MzAyODc4My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();
+
+</script>
+</body>
+</html>
