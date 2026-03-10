@@ -288,32 +288,48 @@ function toggleEdit() {
 const scriptURL = 'https://script.google.com/macros/s/AKfycbw5zQGtkKV9OAH5vRglIvXlvN5m3Lg-c0pGvmMpXlP8TqQDsbyAttZTo_fs8lTqN5AG/exec';
 const form = document.getElementById('lhkh-form');
 
-// Fungsi untuk mengirim data
+// Fungsi untuk mengirim data - VERSI DENGAN RESPONSE HANDLING
 async function submitToSheet(formData) {
   try {
     console.log('Mengirim data ke:', scriptURL);
     
-    // Buat object dari formData untuk debugging
+    // Buat object dari formData
     const formDataObj = {};
     formData.forEach((value, key) => {
       formDataObj[key] = value;
     });
     console.log('Data yang dikirim:', formDataObj);
     
-    // Kirim ke Apps Script
+    // KIRIM DENGAN mode 'cors' untuk melihat response
     const response = await fetch(scriptURL, {
       method: 'POST',
-      mode: 'no-cors', // PENTING: hindari CORS error
+      mode: 'cors', // UBAH ke cors untuk melihat response
+      redirect: 'follow',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams(formDataObj).toString()
     });
     
-    // Karena mode 'no-cors', kita tidak bisa baca response
-    // Tapi kita anggap sukses jika tidak error
-    console.log('Pengiriman berhasil (mode no-cors)');
-    return { success: true };
+    // BACA RESPONSE
+    const responseText = await response.text();
+    console.log('Response dari server:', responseText);
+    
+    try {
+      const responseData = JSON.parse(responseText);
+      if (responseData.success) {
+        console.log('SUKSES:', responseData.message);
+        return { success: true, data: responseData };
+      } else {
+        console.error('ERROR dari server:', responseData.error);
+        return { success: false, error: responseData.error };
+      }
+    } catch (e) {
+      // Jika bukan JSON, tampilkan apa adanya
+      console.log('Response (bukan JSON):', responseText);
+      // Anggap sukses jika tidak ada error
+      return { success: true };
+    }
     
   } catch (error) {
     console.error('Error mengirim data:', error);
@@ -2016,4 +2032,5 @@ function saveToLocalStorage(formData) {
  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d972ac05144f8fb',t:'MTc3MzAyODc2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
+
 
