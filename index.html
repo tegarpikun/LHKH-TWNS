@@ -289,6 +289,7 @@ const scriptURL = 'https://script.google.com/macros/s/AKfycbyg7esWENC1bzwb4oiQ56
 const form = document.getElementById('lhkh-form');
 
 // Fungsi untuk mengirim data
+   /*
 async function submitToSheet(formData) {
   try {
     console.log('Mengirim data ke:', scriptURL);
@@ -320,6 +321,7 @@ async function submitToSheet(formData) {
     return { success: false, error: error.message };
   }
 }
+*/
 
 // Fungsi untuk mengumpulkan semua data form
 function collectAllFormData() {
@@ -343,7 +345,7 @@ function collectAllFormData() {
 
 // HAPUS fungsi handleSubmit yang lama (sekitar baris 3000-an)
 // dan GANTI dengan fungsi ini:
-/*
+
 async function handleSubmit(e) {
   e.preventDefault();
   
@@ -376,7 +378,7 @@ async function handleSubmit(e) {
     setLoading(false);
   }
 }
-*/
+
 
 // Fungsi cadangan untuk menyimpan ke localStorage
 function saveToLocalStorage(formData) {
@@ -1978,6 +1980,7 @@ function saveToLocalStorage(formData) {
  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d972ac05144f8fb',t:'MTc3MzAyODc2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
+
 
 
 
