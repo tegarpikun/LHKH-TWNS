@@ -279,70 +279,34 @@ function toggleEdit() {
    </div>
   </div>
   <script>
+
+// 1. Tempel URL yang Anda salin tadi di sini
 const scriptURL = 'https://script.google.com/macros/s/AKfycbyIDaLg2Bx97UA2rdOiMc0X6pFeP4xiEXO28Qw6FK5tyHFjuxl4cKwXebbwaHCdvx7Y/exec';
 const form = document.getElementById('lhkh-form');
-const btnSubmit = document.getElementById('confirm-submit-btn');
-// Biarkan kosong atau arahkan ke URL Web App setelah Deploy
-const scriptURL = google.script.run;
-btnSubmit.addEventListener('click', e => {
-  e.preventDefault();
- // Ganti logika fetch lama Anda dengan ini:
+
+// 2. Logika ketika tombol "Kirim Laporan" diklik
 document.getElementById('confirm-submit-btn').addEventListener('click', e => {
   e.preventDefault();
+  
+  // Mengubah teks tombol menjadi "Mengirim..." agar user tahu proses sedang jalan
   const btn = e.currentTarget;
+  const originalText = btn.innerHTML;
   btn.innerHTML = 'Sedang Mengirim...';
   btn.disabled = true;
 
-  // Mengambil data dari form
-  const formData = new FormData(document.getElementById('lhkh-form'));
-  const data = {};
-  formData.forEach((value, key) => { data[key] = value; });
-  
-  // Menambahkan data tambahan (Timer dll) jika perlu
-  data.prep_timer_val = document.getElementById('prep-timer').innerText;
-  data.process_timer_val = document.getElementById('process-timer').innerText;
-
-  // Memanggil fungsi doPost secara internal di GAS
-  google.script.run
-    .withSuccessHandler(() => {
-       alert("Berhasil! Laporan LHKH telah tersimpan.");
-       window.location.reload();
-    })
-    .withFailureHandler(err => {
-       alert("Gagal: " + err);
-       btn.disabled = false;
-    })
-    .doPost({parameter: data}); // Simulasi event parameter
-}); 
-  // Validasi sederhana: pastikan form ada sebelum dikirim
-  if (!form) {
-    console.error("Elemen form dengan ID 'lhkh-form' tidak ditemukan!");
-    return;
-  }
-
-  // Visual feedback: tombol loading
-  const originalText = btnSubmit.innerHTML;
-  btnSubmit.innerHTML = '⌛ Sedang Mengirim...';
-  btnSubmit.disabled = true;
-
-  // Mengirim data menggunakan fetch
   fetch(scriptURL, { 
     method: 'POST', 
-    body: new FormData(form),
-    mode: 'no-cors' // WAJIB: Menghindari error CORS/Koneksi di browser
+    body: new FormData(form) 
   })
-  .then(() => {
-    // Karena menggunakan no-cors, kita tidak bisa membaca isi response, 
-    // tapi jika masuk ke .then berarti request sudah terlepas ke server.
-    alert("Berhasil! Laporan LHKH telah terkirim.");
-    form.reset();
-    window.location.reload(); 
+  .then(response => {
+    alert("Berhasil! Laporan LHKH telah tersimpan di Spreadsheet.");
+    window.location.reload(); // Segarkan halaman setelah berhasil
   })
   .catch(error => {
     console.error('Error!', error.message);
-    alert("Terjadi kesalahan teknis. Pastikan URL Script benar dan Anda sudah Deploy sebagai 'Anyone'.");
-    btnSubmit.innerHTML = originalText;
-    btnSubmit.disabled = false;
+    alert("Gagal mengirim data. Silakan cek koneksi internet Anda.");
+    btn.innerHTML = originalText;
+    btn.disabled = false;
   });
 });
     const employees = [
@@ -1927,7 +1891,4 @@ document.getElementById('confirm-submit-btn').addEventListener('click', e => {
  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d972ac05144f8fb',t:'MTc3MzAyODc2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
-
-
-
 
