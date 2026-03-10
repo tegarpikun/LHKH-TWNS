@@ -280,34 +280,121 @@ function toggleEdit() {
   </div>
   <script>
 
-// 1. Tempel URL yang Anda salin tadi di sini
+// ============================================
+// PERBAIKAN KODE PENGIRIMAN DATA - COPY INI
+// ============================================
+
+// GANTI DENGAN URL WEB APP ANDA YANG BARU
 const scriptURL = 'https://script.google.com/macros/s/AKfycbyIDaLg2Bx97UA2rdOiMc0X6pFeP4xiEXO28Qw6FK5tyHFjuxl4cKwXebbwaHCdvx7Y/exec';
 const form = document.getElementById('lhkh-form');
 
-// 2. Logika ketika tombol "Kirim Laporan" diklik
-document.getElementById('confirm-submit-btn').addEventListener('click', e => {
+// Fungsi untuk mengirim data
+async function submitToSheet(formData) {
+  try {
+    console.log('Mengirim data ke:', scriptURL);
+    
+    // Buat object dari formData untuk debugging
+    const formDataObj = {};
+    formData.forEach((value, key) => {
+      formDataObj[key] = value;
+    });
+    console.log('Data yang dikirim:', formDataObj);
+    
+    // Kirim ke Apps Script
+    const response = await fetch(scriptURL, {
+      method: 'POST',
+      mode: 'no-cors', // PENTING: hindari CORS error
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams(formDataObj).toString()
+    });
+    
+    // Karena mode 'no-cors', kita tidak bisa baca response
+    // Tapi kita anggap sukses jika tidak error
+    console.log('Pengiriman berhasil (mode no-cors)');
+    return { success: true };
+    
+  } catch (error) {
+    console.error('Error mengirim data:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Fungsi untuk mengumpulkan semua data form
+function collectAllFormData() {
+  const formData = new FormData(form);
+  
+  // Tambahkan data timer
+  formData.append('prep_time_hours', secondsToHours(timerState.prep.seconds).toString());
+  formData.append('process_time_hours', secondsToHours(timerState.process.seconds).toString());
+  
+  // Tambahkan data defect dan downtime
+  formData.append('defect_details', JSON.stringify(collectDefectDetails()));
+  formData.append('downtime_details', JSON.stringify(collectDowntimeDetails()));
+  
+  // Tambahkan timestamp
+  formData.append('submitted_at', new Date().toISOString());
+  formData.append('submitted_by', document.getElementById('nama_operator').value || '');
+  formData.append('record_id', 'LHKH-' + Date.now());
+  
+  return formData;
+}
+
+// HAPUS fungsi handleSubmit yang lama (sekitar baris 3000-an)
+// dan GANTI dengan fungsi ini:
+
+async function handleSubmit(e) {
   e.preventDefault();
   
-  // Mengubah teks tombol menjadi "Mengirim..." agar user tahu proses sedang jalan
-  const btn = e.currentTarget;
-  const originalText = btn.innerHTML;
-  btn.innerHTML = 'Sedang Mengirim...';
-  btn.disabled = true;
+  if (!validateRequiredFields() || !validateDefects()) return;
+  
+  setLoading(true);
+  
+  try {
+    const formData = collectAllFormData();
+    const result = await submitToSheet(formData);
+    
+    if (result.success) {
+      showToast('✅ Laporan berhasil dikirim ke spreadsheet!');
+      
+      // Simpan juga di localStorage sebagai cadangan
+      saveToLocalStorage(formData);
+      
+      // Reset form
+      setTimeout(() => {
+        resetForm();
+        setLoading(false);
+      }, 1500);
+    } else {
+      showToast('❌ Gagal mengirim: ' + result.error, true);
+      setLoading(false);
+    }
+  } catch (error) {
+    console.error('Submit error:', error);
+    showToast('❌ Terjadi kesalahan: ' + error.message, true);
+    setLoading(false);
+  }
+}
 
-  fetch(scriptURL, { 
-    method: 'POST', 
-    body: new FormData(form) 
-  })
-  .then(response => {
-    alert("Berhasil! Laporan LHKH telah tersimpan di Spreadsheet.");
-    window.location.reload(); // Segarkan halaman setelah berhasil
-  })
-  .catch(error => {
-    console.error('Error!', error.message);
-    alert("Gagal mengirim data. Silakan cek koneksi internet Anda.");
-    btn.innerHTML = originalText;
-    btn.disabled = false;
-  });
+// Fungsi cadangan untuk menyimpan ke localStorage
+function saveToLocalStorage(formData) {
+  try {
+    const reports = JSON.parse(localStorage.getItem('lhkh_reports') || '[]');
+    const dataObj = {};
+    formData.forEach((value, key) => { dataObj[key] = value; });
+    reports.unshift(dataObj);
+    localStorage.setItem('lhkh_reports', JSON.stringify(reports.slice(0, 50)));
+  } catch (e) {
+    console.error('Gagal simpan ke localStorage:', e);
+  }
+}
+
+// HAPUS baris ini (listener lama):
+// document.getElementById('confirm-submit-btn').addEventListener('click', handleSubmit);
+
+// PASTIKAN HANYA ADA SATU LISTENER di bagian bawah script:
+// Cari bagian yang ada kode ini dan pastikan hanya satu yang aktif
 });
     const employees = [
       "MUSTAKIM", "SATRIA ACHMAD BAGJA", "AHMAD SYAYUDI", "HERI IRAWAN",
@@ -1891,4 +1978,5 @@ document.getElementById('confirm-submit-btn').addEventListener('click', e => {
  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d972ac05144f8fb',t:'MTc3MzAyODc2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
+
 
