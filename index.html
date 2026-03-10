@@ -279,34 +279,42 @@ function toggleEdit() {
    </div>
   </div>
   <script>
-
-// 1. Tempel URL yang Anda salin tadi di sini
 const scriptURL = 'https://script.google.com/macros/s/AKfycbwJgB2949NkljSVUJCKsBO565JMj-k1PlntyPXo9B1T5CGQIetT6vEzs_G-lKtosibW/exec';
 const form = document.getElementById('lhkh-form');
+const btnSubmit = document.getElementById('confirm-submit-btn');
 
-// 2. Logika ketika tombol "Kirim Laporan" diklik
-document.getElementById('confirm-submit-btn').addEventListener('click', e => {
+btnSubmit.addEventListener('click', e => {
   e.preventDefault();
   
-  // Mengubah teks tombol menjadi "Mengirim..." agar user tahu proses sedang jalan
-  const btn = e.currentTarget;
-  const originalText = btn.innerHTML;
-  btn.innerHTML = 'Sedang Mengirim...';
-  btn.disabled = true;
+  // Validasi sederhana: pastikan form ada sebelum dikirim
+  if (!form) {
+    console.error("Elemen form dengan ID 'lhkh-form' tidak ditemukan!");
+    return;
+  }
 
+  // Visual feedback: tombol loading
+  const originalText = btnSubmit.innerHTML;
+  btnSubmit.innerHTML = '⌛ Sedang Mengirim...';
+  btnSubmit.disabled = true;
+
+  // Mengirim data menggunakan fetch
   fetch(scriptURL, { 
     method: 'POST', 
-    body: new FormData(form) 
+    body: new FormData(form),
+    mode: 'no-cors' // WAJIB: Menghindari error CORS/Koneksi di browser
   })
-  .then(response => {
-    alert("Berhasil! Laporan LHKH telah tersimpan di Spreadsheet.");
-    window.location.reload(); // Segarkan halaman setelah berhasil
+  .then(() => {
+    // Karena menggunakan no-cors, kita tidak bisa membaca isi response, 
+    // tapi jika masuk ke .then berarti request sudah terlepas ke server.
+    alert("Berhasil! Laporan LHKH telah terkirim.");
+    form.reset();
+    window.location.reload(); 
   })
   .catch(error => {
     console.error('Error!', error.message);
-    alert("Gagal mengirim data. Silakan cek koneksi internet Anda.");
-    btn.innerHTML = originalText;
-    btn.disabled = false;
+    alert("Terjadi kesalahan teknis. Pastikan URL Script benar dan Anda sudah Deploy sebagai 'Anyone'.");
+    btnSubmit.innerHTML = originalText;
+    btnSubmit.disabled = false;
   });
 });
     const employees = [
@@ -1891,5 +1899,6 @@ document.getElementById('confirm-submit-btn').addEventListener('click', e => {
  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d972ac05144f8fb',t:'MTc3MzAyODc2Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 
 </html>
+
 
 
